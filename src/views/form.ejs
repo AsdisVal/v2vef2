@@ -1,0 +1,21 @@
+<%- include('header') -%>
+
+<form method="post" action="/form">
+
+  <label for="name">Heiti flokks:</label>
+  <input type="text" id="name" name="name">
+  <input type="number" id="name" name="number">
+  <label>rétt svar #1: <input type="radio" id="name" name="rett_svar" value="1"></label>
+  <label>rétt svar #2: <input type="radio" id="name" name="rett_svar" value="1"></label>
+  <label>rétt svar #3: <input type="radio" id="name" name="rett_svar" value="1"></label>
+
+  <input type="checkbox" id="name" name="checkbox">
+  <select>
+    <option>foo</option>
+    <option value="foobar">bar</option>
+  </select>
+  <textarea name="text"></textarea>
+  <button type="submit">Búa til flokk</button>
+</form>
+
+<%- include('footer') -%>

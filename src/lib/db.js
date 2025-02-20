@@ -1,15 +1,17 @@
 import express from 'express';
-import { getDatabase } from './lib/db.client.js';
-import { environment } from './lib/environment.js';
-import { categoriesData } from './lib/categories.js';
+import { getDatabase } from '../lib/db.client.js';
+import { environment } from '../lib/environment.js';
+import { logger } from '../lib/logger.js';
 
 export const router = express.Router();
 
 router.get('/', async (req, res) => {
-  const categoriesData = await categoriesData();
+  const result = await getDatabase()?.query('SELECT * FROM categories');
 
-  console.log(categoriesData);
-  res.render('index', { title: 'Forsíða', categoriesData });
+  const categories = result?.rows ?? [];
+
+  console.log(categories);
+  res.render('index', { title: 'Forsíða', categories });
 });
 
 router.get('/spurningar/:category', (req, res) => {
@@ -28,6 +30,15 @@ router.post('/form', async (req, res) => {
   console.log(name);
 
   // Hér þarf að setja upp validation, hvað ef name er tómt? hvað ef það er allt handritið að BEE MOVIE?
+
+  //if name is empty then send message to user
+  if (!name) {
+    res.render('form', {
+      title: 'Búa til flokk',
+      error: 'Nafn má ekki vera tómt',
+    });
+    return;
+  }
   // Hvað ef það er SQL INJECTION? HVAÐ EF ÞAÐ ER EITTHVAÐ ANNAÐ HRÆÐILEGT?!?!?!?!?!
   // TODO VALIDATION OG HUGA AÐ ÖRYGGI
 
