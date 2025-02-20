@@ -1,10 +1,12 @@
 import express from 'express';
 import { router } from './routes.js';
 
-const app = express();
-
 import { fileURLToPath } from 'url';
 import path from 'path';
+
+const app = express();
+
+app.use(express.urlencoded({ extended: true })); //leyfir url encoded gögnum
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
