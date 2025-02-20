@@ -1,15 +1,17 @@
 import express from 'express';
 import { getDatabase } from './lib/db.client.js';
 import { environment } from './lib/environment.js';
-import { categoriesData } from './lib/categories.js';
+import { logger } from './lib/logger.js';
 
 export const router = express.Router();
 
 router.get('/', async (req, res) => {
-  const categoriesData = await categoriesData();
+  const result = await getDatabase()?.query('SELECT * FROM categories');
 
-  console.log(categoriesData);
-  res.render('index', { title: 'Forsíða', categoriesData });
+  const categories = result?.rows ?? [];
+
+  console.log(categories);
+  res.render('index', { title: 'Forsíða', categories });
 });
 
 router.get('/spurningar/:category', (req, res) => {
