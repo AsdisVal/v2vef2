@@ -5,7 +5,6 @@ import xss from 'xss';
 
 export const router = express.Router();
 
-// ✅ Home Route - Fetch Categories
 router.get('/', async (req, res) => {
   try {
     const db = getDatabase();
@@ -18,13 +17,11 @@ router.get('/', async (req, res) => {
   }
 });
 
-// ✅ Get questions by category
 router.get('/spurningar/:category', async (req, res) => {
   try {
     const { category } = req.params;
     const db = getDatabase();
 
-    // 🔹 Get category ID
     const categoryResult = await db?.query(
       'SELECT id FROM categories WHERE name = $1',
       [category]
@@ -43,7 +40,6 @@ router.get('/spurningar/:category', async (req, res) => {
   }
 });
 
-// ✅ Create a new category
 router.post(
   '/form',
   [
@@ -86,7 +82,6 @@ router.post(
   }
 );
 
-// ✅ Create a new question
 router.post(
   '/spurning/new',
   [
