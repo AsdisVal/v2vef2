@@ -7,9 +7,11 @@ router.get('/', (req, res) => {
 });
 
 router.get('/spurningar/:category', (req, res) => {
-  res.send(`Spurningaflokkur = ${req.params.category}`);
+  // ekki tilbúið
+  const title = req.params.category;
+  res.render('category', { title });
 });
 
-router.get('./form', (req, res) => {
+router.get('/form', (req, res) => {
   res.send('<!doctype>...');
 });
