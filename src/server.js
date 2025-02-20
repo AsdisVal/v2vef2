@@ -3,7 +3,13 @@ import { router } from './routes.js';
 
 const app = express();
 
-const viewsPath = new URL('./views', import.meta.url).pathname;
+import { fileURLToPath } from 'url';
+import path from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const viewsPath = path.join(__dirname, 'views');
 
 app.set('views', viewsPath);
 app.set('view engine', 'ejs');
