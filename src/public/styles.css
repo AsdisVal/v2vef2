@@ -1,0 +1,49 @@
+/* Reset og border-box á allt */
+* {
+    margin: 0;
+    padding: 0;
+  }
+  
+  html {
+    box-sizing: border-box;
+  }
+  
+  *,
+  *::before,
+  *::after {
+    box-sizing: inherit;
+  }
+
+  button {
+    background-color: #ff4081; /* Vivid Pink */
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background 0.3s ease-in-out;
+  }
+
+  button:hover {
+    background-color: #e91e63; /* Slightly Darker Pink on Hover */
+}
+
+.card {
+  background: white;
+  border: 2px solid #ff80ab; /* Light Pink Border */
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+input, textarea {
+  border: 2px solid #ff4081;
+  padding: 8px;
+  border-radius: 5px;
+}
+
+input:focus, textarea:focus {
+  border-color: #e91e63;
+  outline: none;
+  box-shadow: 0 0 5px #ff4081;
+}
