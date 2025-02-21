@@ -1,17 +1,19 @@
 <%- include('header') -%>
 
-<h1>Flokkar</h1>
-
 <% if (categories.length === 0) { %>
   <p>Engir flokkar fundust.</p>
 <% } else { %>
   <ul>
     <% for (const category of categories) { %>
-      <li><a href="/spurningar/<%=category.id%>"><%=category.name%></a></li>
-    <% } %>
+      <li>
+        <a href="/spurningar/<%=category.id%>"><%=category.name%></a>
+      </li>
+    <% 
+    } %>
   </ul>
-<% } %>
+<% 
+} %>
 
-<a href="/form">Bæta við nýjum flokk</a>
+
 
 <%- include('footer') -%>

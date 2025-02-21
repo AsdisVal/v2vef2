@@ -1,19 +1,35 @@
-<%- include('header') -%>
+<h1>Bætum við spurningu</h1>
 
-<h1>Búa til flokk</h1>
+<form action="/spurningar">
+  <label for="category">Veldu flokk fyrir spurninguna</label>
+  <select name="category" id="category" required>
+    <% categories.forEach(category => { %>
+      <option value="<%= category.id %>">
+        <%= category.name %>
+      </option>
+    <% }); %>
+  </select> 
 
-<% if (errors.length > 0) { %>
-  <div class="error-messages">
-    <% errors.forEach(error => { %>
-      <p style="color: red;"><%= error %></p>
-    <% }) %>
-  </div>
-<% } %>
+  <p>
+    <label for="spurning">Spurning:</label>
+    <input type="text" id="spurning" name="question" required/>
+  </p>
 
-<form method="post" action="/form" enctype="application/x-www-form-urlencoded">
-  <label for="name">Heiti flokks:</label>
-  <button type="submit">Búa til flokk</button>
-  
+  <p>
+    <label>Valmöguleikar:</label>
+    <input type="text" name="answer1" required>
+      <input type="radio" id="rett1" name="correct" value="1" required> <input type="text" name="answer1" required> Rétt
+    <input type="text" name="answer2" required>
+      <input type="radio" id="rett2" name="correct" value="2" required> <input type="text" name="answer2" required> Rétt
+    <input type="text" name="answer3" required>
+      <input type="radio" id="rett3" name="correct" value="3" required> <input type="text" name="answer3" required> Rétt
+    <input type="text" name="answer4" required>
+      <input type="radio" id="rett4" name="correct" value="4" required> <input type="text" name="answer4" required> Rétt
+    <label for="rett1">Rétt svar</label>
+  </p>
+
+  <button type="addQuestion">Spurning búin til</button>
+
 </form>
 
 <%- include('footer') -%>

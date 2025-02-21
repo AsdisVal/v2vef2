@@ -6,20 +6,10 @@
     <input type="text" id="question_text" name="question_text" required>
 
     <label for="category_id">Flokkur:</label>
-    <select id="category_id" name="category_id" required>
-        <% categories.forEach(category => { %>
-            <option value="<%= category.id %>"><%= category.name %></option>
-        <% }); %>
-    </select>
+    
+      <a href="/form">Bæta við nýjum flokk</a>
 
-    <h3>Svör:</h3>
-    <% for (let i = 0; i < 4; i++) { %>
-        <div>
-            <input type="text" name="answers[<%= i %>][text]" placeholder="Svar <%= i + 1 %>" required>
-            <input type="checkbox" name="answers[<%= i %>][is_correct]" value="true"> Rétt svar
-        </div>
-    <% } %>
-
+   
     <button type="submit">Senda inn</button>
 </form>
 
