@@ -3,37 +3,29 @@ import { environment } from './environment.js';
 import { logger as loggerSingleton } from './logger.js';
 
 export class Database {
-  constructor(connectionString, logger) {
+  constructor(connectionString, logger = loggerSingleton) {
     this.connectionString = connectionString;
     this.logger = logger;
+    this.pool = null;
   }
 
-  /** @type {pg.Pool | null} */
-  pool = null;
-
   open() {
-    this.pool = new pg.Pool({ connectionString: this.connectionString });
-
-    this.pool.on('error', (err) => {
-      this.logger.error('Error in database pool', err);
-      this.close();
-    });
+    if (!this.pool) {
+      this.pool = new pg.Pool({ connectionString: this.connectionString });
+      this.pool.on('error', (err) => {
+        this.logger.error('Database pool error:', err);
+        this.close();
+      });
+    }
   }
 
   async close() {
-    if (!this.pool) {
-      this.logger.error('Cannot close a database connection that is not open');
-      return false;
-    }
-
+    if (!this.pool) return this.logger.error('Database is not open');
     try {
       await this.pool.end();
-      return true;
-    } catch (e) {
-      this.logger.error('Error closing database pool', { error: e });
-      return false;
-    } finally {
       this.pool = null;
+    } catch (err) {
+      this.logger.error('Error closing database', err);
     }
   }
 
@@ -66,10 +58,10 @@ export class Database {
   }
 
   async getCategories() {
-    const result = await this.query(
-      'SELECT id, name FROM categories ORDER BY name ASC'
+    return (
+      (await this.query('SELECT id, name FROM categories ORDER BY name ASC'))
+        ?.rows ?? []
     );
-    return result?.rows ?? [];
   }
 
   async insertCategory(name) {
@@ -77,60 +69,71 @@ export class Database {
       'SELECT id FROM categories WHERE name = $1',
       [name]
     );
-    if (existing && existing.rows.length > 0) return null;
+    if (existing?.rows.length) return null;
 
-    const result = await this.query(
-      'INSERT INTO categories (name) VALUES ($1) RETURNING id, name',
-      [name]
+    return (
+      (
+        await this.query(
+          'INSERT INTO categories (name) VALUES ($1) RETURNING id, name',
+          [name]
+        )
+      )?.rows[0] ?? null
     );
-    return result?.rows.length ? result.rows[0] : null;
   }
 
   // þetta myndi meika sens held ég ef ég gæti náð að tengja gögnin við þetta lol
   async getQuestionsByCategory(categoryId) {
-    const result = await this.query(
-      `SELECT q.id, q.question_text, 
-              json_agg(json_build_object('id', a.id, 'text', a.answer_text, 'is_correct', a.is_correct)) AS answers
-       FROM questions q
-       LEFT JOIN answers a ON q.id = a.question_id
-       WHERE q.category_id = $1
-       GROUP BY q.id
-       ORDER BY q.id DESC;`,
-      [categoryId]
+    return (
+      (
+        await this.query(
+          `SELECT q.id, q.question_text, 
+        json_agg(json_build_object('id', a.id, 'text', a.answer_text, 'is_correct', a.is_correct)) AS answers
+      FROM questions q
+      LEFT JOIN answers a ON q.id = a.question_id
+      WHERE q.category_id = $1
+      GROUP BY q.id
+      ORDER BY q.id DESC;`,
+          [categoryId]
+        )
+      )?.rows ?? []
     );
-
-    return result?.rows ?? [];
   }
 
   //new question
   async insertQuestion(text, categoryId) {
-    const result = await this.query(
-      'INSERT INTO questions (question_text, category_id) VALUES ($1, $2) RETURNING id',
-      [text, categoryId]
+    return (
+      (
+        await this.query(
+          'INSERT INTO questions (question_text, category_id) VALUES ($1, $2) RETURNING id',
+          [text, categoryId]
+        )
+      )?.rows[0] ?? null
     );
-    return result?.rows.length ? result.rows[0] : null;
   }
 
   //an answer
   async insertAnswer(questionId, text, isCorrect) {
-    const result = await this.query(
-      'INSERT INTO answers (question_id, answer_text, is_correct) VALUES ($1, $2, $3) RETURNING id',
-      [questionId, text, isCorrect]
+    return (
+      (
+        await this.query(
+          'INSERT INTO answers (question_id, answer_text, is_correct) VALUES ($1, $2, $3) RETURNING id',
+          [questionId, text, isCorrect]
+        )
+      )?.rows[0] ?? null
     );
-    return result?.rows.length ? result.rows[0] : null;
   }
 }
 
-/** Singleton database instance */
-let db = null;
+/** Singleton instance */
+let dbInstance = null;
 
 export function getDatabase() {
-  if (!db) {
+  if (!dbInstance) {
     const env = environment(process.env, loggerSingleton);
     if (!env) return null;
 
-    db = new Database(env.connectionString, loggerSingleton);
-    db.open();
+    dbInstance = new Database(env.connectionString);
+    dbInstance.open();
   }
-  return db;
+  return dbInstance;
 }
