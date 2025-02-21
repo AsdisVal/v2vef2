@@ -1,7 +1,5 @@
 import express from 'express';
 import { getDatabase } from '../lib/db.client.js';
-import { body, validationResult } from 'express-validator';
-import xss from 'xss';
 import {
   categoryValidation,
   questionValidation,

@@ -9,7 +9,8 @@ export function categoryValidation() {
       .notEmpty()
       .withMessage('Nafn má ekki vera tómt')
       .isLength({ min: 3, max: 64 })
-      .withMessage('Nafn verður að vera á milli 3 og 64 stafa'),
+      .withMessage('Nafn verður að vera á milli 3 og 64 stafa')
+      .customSanitizer((value) => xss(value)),
   ];
 }
 
@@ -21,7 +22,8 @@ export function questionValidation() {
       .notEmpty()
       .withMessage('Spurning má ekki vera tóm')
       .isLength({ min: 10, max: 500 })
-      .withMessage('Spurning verður að vera á milli 10 og 500 stafa'),
+      .withMessage('Spurning verður að vera á milli 10 og 500 stafa')
+      .customSanitizer((value) => xss(value)),
     body('category_id').isInt().withMessage('Veldu gilda flokk'),
   ];
 }
@@ -29,10 +31,10 @@ export function questionValidation() {
 // XSS Protection Middleware
 export function xssSanitizationMiddleware() {
   return [
-    body('name').customSanitizer((v) => xss(v)),
-    body('question_text').customSanitizer((v) => xss(v)),
-    body('category_id').customSanitizer((v) => xss(v)),
-    body('answers.*.text').customSanitizer((v) => xss(v)),
+    body('name').customSanitizer((value) => xss(value)),
+    body('question_text').customSanitizer((value) => xss(value)),
+    body('category_id').customSanitizer((value) => xss(value)),
+    body('answers.*.text').customSanitizer((value) => xss(value)),
   ];
 }
 
@@ -52,15 +54,12 @@ export function validationCheck(req, res, next) {
 // Middleware -> Check Validation Errors f. Questions
 export function questionValidationCheck(req, res, next) {
   const errors = validationResult(req);
-  let { question_text, category_id } = req.body;
-  question_text = xss(question_text);
-
   if (!errors.isEmpty()) {
     return res.render('question-form', {
       title: 'Ný spurning',
       errors: errors.array().map((err) => err.msg),
-      question_text,
-      category_id,
+      question_text: req.body.question_text,
+      category_id: req.body.category_id,
     });
   }
   next();
