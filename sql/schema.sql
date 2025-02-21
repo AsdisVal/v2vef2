@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS public.categories (
     id serial primary key,
-    name varchar(64) not null unique,
+    name varchar(64) not null unique
 );
 CREATE TABLE IF NOT EXISTS public.questions (
     id serial primary key,
