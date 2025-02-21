@@ -114,28 +114,22 @@ router.get('/spurningar/:category', async (req, res) => {
       [category]
     );
     if (!categoryResult || categoryResult.rows.length === 0) {
-      return res.status(404).render('error', { title: 'Flokkur fannst ekki' });
+      return res.status(404).render('error', {
+        title: 'Flokkur fannst ekki',
+        message: `Flokkurinn "${category}" er ekki til.`,
+      });
     }
 
     const categoryId = categoryResult.rows[0].id;
-
-    const questionsResult = await db?.query(
-      `SELECT q.id, q.question_text, 
-              json_agg(json_build_object('id', a.id, 'text', a.answer_text, 'is_correct', a.is_correct)) AS answers
-       FROM questions q
-       LEFT JOIN answers a ON q.id = a.question_id
-       WHERE q.category_id = $1
-       GROUP BY q.id
-       ORDER BY q.id DESC;`,
-      [categoryId]
-    );
-
-    const questions = questionsResult?.rows ?? [];
+    const questions = await db?.getQuestionsByCategory(categoryId);
 
     res.render('category', { title: category, questions });
   } catch (e) {
-    console.error('Database error:', e);
-    res.status(500).render('error', { title: 'Villa við að sækja spurningar' });
+    console.error('Database error fetching questions:', e);
+    res.status(500).render('error', {
+      title: 'Gagnagrunnsvilla',
+      message: 'Villa við að sækja spurningar úr gagnagrunni.',
+    });
   }
 });
 
