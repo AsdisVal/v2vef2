@@ -109,6 +109,7 @@ export function getDatabase() {
     return null;
   }
   db = new Database(env.connectionString, loggerSingleton);
+  console.log(env.connectionString);
   db.open();
 
   return db;
