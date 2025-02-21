@@ -1,25 +1,24 @@
 import express from 'express';
 import { getDatabase } from '../lib/db.client.js';
-import {
-  categoryValidation,
-  questionValidation,
-  validationCheck,
-} from './validation.js';
 
 export const router = express.Router();
 
 router.get('/', async (req, res) => {
   try {
     const db = getDatabase();
-    const categories = await db?.getCategories();
+    const categories = await db?.query('SELECT id, name FROM categories');
     res.render('index', { title: 'Forsíða', categories });
   } catch (e) {
     console.error('Database error:', e);
-    res.status(500).render('error', { title: 'Villa við að sækja flokka' });
+    res
+      .status(500)
+      .render('error', { title: 'Villa við að sækja flokka og headerinn' });
   }
 });
 
-router.get('/spurningar/:category', async (req, res) => {
+/*
+
+router.get('/question_form/:category', async (req, res) => {
   try {
     const db = getDatabase();
     const categoryResult = await db?.query(
@@ -85,3 +84,4 @@ router.post(
     }
   }
 );
+*/

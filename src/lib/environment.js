@@ -24,7 +24,6 @@ export function environment(env, logger) {
   }
 
   const { PORT: port, DATABASE_URL: envConnectionString } = env;
-
   let error = false;
 
   if (!envConnectionString || envConnectionString.length === 0) {

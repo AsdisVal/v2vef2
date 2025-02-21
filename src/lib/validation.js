@@ -55,7 +55,7 @@ export function validationCheck(req, res, next) {
 export function questionValidationCheck(req, res, next) {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.render('question-form', {
+    return res.render('question_form', {
       title: 'Ný spurning',
       errors: errors.array().map((err) => err.msg),
       question_text: req.body.question_text,
