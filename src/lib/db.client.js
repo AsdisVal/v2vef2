@@ -2,12 +2,22 @@ import pg from 'pg';
 import { environment } from './environment.js';
 import { logger as loggerSingleton } from './logger.js';
 
+/**
+ * Database class.
+ */
 export class Database {
-  constructor(connectionString, logger = loggerSingleton) {
+  /**
+   * Create a new database connection.
+   * @param {string} connectionString
+   * @param {import('./logger').Logger} logger
+   */
+  constructor(connectionString, logger) {
     this.connectionString = connectionString;
     this.logger = logger;
-    this.pool = null;
   }
+
+  /** @type {pg.Pool | null} */
+  pool = null;
 
   open() {
     if (!this.pool) {
@@ -19,38 +29,63 @@ export class Database {
     }
   }
 
+  /**
+   * Close the database connection.
+   * @returns {Promise<boolean>}
+   */
   async close() {
-    if (!this.pool) return this.logger.error('Database is not open');
+    if (!this.pool) {
+      this.logger.error('unable to close database connection that is not open');
+      return false;
+    }
+
     try {
       await this.pool.end();
+      return true;
+    } catch (e) {
+      this.logger.error('error closing database pool', { error: e });
+      return false;
+    } finally {
       this.pool = null;
-    } catch (err) {
-      this.logger.error('Error closing database', err);
     }
   }
 
+  /**
+   * Connect to the database via the pool.
+   * @returns {Promise<pg.PoolClient | null>}
+   */
   async connect() {
     if (!this.pool) {
-      this.logger.error('Trying to use a database that is not open');
+      this.logger.error('Reynt að nota gagnagrunn sem er ekki opinn');
       return null;
     }
 
     try {
-      return await this.pool.connect();
+      const client = await this.pool.connect();
+      return client;
     } catch (e) {
       this.logger.error('Error connecting to the database', { error: e });
       return null;
     }
   }
 
+  /**
+   * Run a query on the database.
+   * @param {string} query SQL query.
+   * @param {Array<string>} values Parameters for the query.
+   * @returns {Promise<pg.QueryResult | null>} Result of the query.
+   */
   async query(query, values = []) {
     const client = await this.connect();
-    if (!client) return null;
+    if (!client) {
+      return null;
+    }
 
     try {
-      return await client.query(query, values);
+      const result = await client.query(query, values);
+      return result;
     } catch (e) {
-      this.logger.error('Error running query', { error: e });
+      this.logger.error('Error running query', e);
       return null;
     } finally {
       client.release();
@@ -124,16 +159,25 @@ export class Database {
   }
 }
 
-/** Singleton instance */
-let dbInstance = null;
+/** @type {Database | null} */
+let db = null;
 
+/**
+ * Return a singleton database instance.
+ * @returns {Database | null}
+ */
 export function getDatabase() {
-  if (!dbInstance) {
-    const env = environment(process.env, loggerSingleton);
-    if (!env) return null;
-
-    dbInstance = new Database(env.connectionString);
-    dbInstance.open();
+  if (db) {
+    return db;
   }
-  return dbInstance;
+
+  const env = environment(process.env, loggerSingleton);
+
+  if (!env) {
+    return null;
+  }
+  db = new Database(env.connectionString, loggerSingleton);
+  db.open();
+
+  return db;
 }
