@@ -1,19 +1,19 @@
-CREATE TABLE IF NOT EXISTS public.categories (
+CREATE TABLE IF NOT EXISTS public.flokkar (
     id serial primary key,
-    name varchar(64) not null unique
+    nafn varchar(64) not null unique
 );
-CREATE TABLE IF NOT EXISTS public.questions (
+CREATE TABLE IF NOT EXISTS public.spurningar (
     id serial primary key,
-    category_id integer not null references public.categories(id) on delete cascade,
-    question text not null check (
-        char_length(question) between 10 and 500
+    flokkur_id integer not null references public.flokkar(id) on delete cascade,
+    spurning text not null check (
+        char_length(spurning) between 10 and 500
     )
 );
-CREATE TABLE IF NOT EXISTS public.answers (
+CREATE TABLE IF NOT EXISTS public.svor (
     id serial primary key,
-    question_id integer not null references public.questions(id) on delete cascade,
-    answer TEXT NOT NULL CHECK (
-        char_length(answer) BETWEEN 1 AND 255
+    spurning_id integer not null references public.spurningar(id) on delete cascade,
+    svar TEXT NOT NULL CHECK (
+        char_length(svar) BETWEEN 1 AND 255
     ),
-    is_correct boolean default false not null
+    rett_svar boolean default false not null
 );
