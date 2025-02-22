@@ -1,19 +1,13 @@
 <%- include('header') -%>
 
-<% if (flokkar.length === 0) { %>
-  <p>Engir flokkar fundust.</p>
-<% } else { %>
+<div class="container">
   <ul>
     <% for (const flokkur of flokkar) { %>
-      <li>
-        <a href="/flokkur/<%=flokkur.id%>"><%=flokkur.nafn%></a>
+      <li class="categories">
+        <a href="/spurningar/<%=flokkur.nafn%>"><%=flokkur.nafn%></a>
       </li>
-    <% 
-    } %>
+    <% } %>
   </ul>
-<% 
-} %>
-
-
+</div>
 
 <%- include('footer') -%>

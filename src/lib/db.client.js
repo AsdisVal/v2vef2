@@ -89,6 +89,24 @@ export class Database {
       client.release();
     }
   }
+
+  async getAllCategories() {
+    const cats = await this.query('SELECT * FROM flokkar');
+    if (cats) {
+      return cats.rows;
+    }
+    return null;
+  }
+
+  async getQuestions(selectedCategory) {
+    const queryQuestions = `
+    SELECT s.id AS id, s.spurning AS text, f.nafn AS category
+    FROM spurningar AS s
+    JOIN flokkar AS f ON s.flokkur_id = f.id
+    WHERE f.nafn = $1;
+  `;
+    const result = await this.query(queryQuestions, [selectedCategory]);
+  }
 }
 
 /** @type {Database | null} */

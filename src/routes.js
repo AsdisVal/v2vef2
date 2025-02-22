@@ -14,63 +14,52 @@ import express from 'express';
 import { getDatabase } from './lib/db.client.js';
 import { body, validationResult } from 'express-validator';
 import xss from 'xss';
-import {
-  questionValidation,
-  questionValidationCheck,
-} from './lib/validation.js';
 
 export const router = express.Router();
 
 router.get('/', async (req, res) => {
-  try {
-    const db = getDatabase();
+  const db = getDatabase();
+  const flokkar = await db?.getAllCategories();
+  res.status(200).render('index', { title: 'Forsíða', flokkar });
+});
 
-    const result = await db?.query('SELECT id, nafn FROM flokkar');
-    const flokkar = result?.rows ?? [];
-    res.status(200).render('index', { title: 'Forsíðan', flokkar });
-  } catch (e) {
-    console.error('Database error:', e);
-    res.status(500).render('error', { title: 'Villa við að hlaða' });
-  }
+router.get('/spurningar/:flokkar', async (req, res) => {
+  const nafnFlokks = req.params.flokkar; //req = request btw
+  const spurningarFlokksins = await getDatabase().getQuestions(nafnFlokks);
 });
 
 // this is triggered when a user submits a form
-router.post(
-  '/form',
-  questionValidation(),
-  questionValidationCheck,
-  async (req, res) => {
-    let { spurning, flokkur_id, svor } = req.body;
+router.post('/form', async (req, res) => {
+  let { spurning, flokkur_id, svor } = req.body;
 
-    //hreinsa svörin
-    svor = svor.map((svr) => ({ ...svr, text: xss(svr.text) }));
+  //hreinsa svörin
+  svor = svor.map((svr) => ({ ...svr, text: xss(svr.text) }));
 
-    try {
-      const db = getDatabase();
+  try {
+    const db = getDatabase();
 
-      const questionResult = await db?.query(
-        'INSERT INTO spurningar (spurning, flokkur_id) VALUES ($1, $2) RETURNING id',
-        [spurning, flokkur_id]
+    const questionResult = await db?.query(
+      'INSERT INTO spurningar (spurning, flokkur_id) VALUES ($1, $2) RETURNING id',
+      [spurning, flokkur_id]
+    );
+
+    const questionId = questionResult?.rows[0].id;
+    if (!questionId) throw new Error('Question ID not found');
+
+    for (const answer of svor) {
+      await db?.query(
+        'INSERT INTO svor (spurning_id, svar, rett_svar) VALUES ($1, $2, $3)',
+        [questionId, answer.text, answer.rett_svar]
       );
-
-      const questionId = questionResult?.rows[0].id;
-      if (!questionId) throw new Error('Question ID not found');
-
-      for (const answer of svor) {
-        await db?.query(
-          'INSERT INTO svor (spurning_id, svar, rett_svar) VALUES ($1, $2, $3)',
-          [questionId, answer.text, answer.rett_svar]
-        );
-      }
-      res.redirect('/form-created');
-    } catch (e) {
-      console.error('Database error:', e);
-      res
-        .status(500)
-        .render('error', { title: 'Villa við að bæta við spurningu' });
     }
+    res.redirect('/form-created');
+  } catch (e) {
+    console.error('Database error:', e);
+    res
+      .status(500)
+      .render('error', { title: 'Villa við að bæta við spurningu' });
   }
-);
+});
 
 router.get('/form', async (req, res) => {
   try {
