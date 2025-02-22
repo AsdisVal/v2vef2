@@ -4,7 +4,7 @@ import xss from 'xss';
 // Validation for Category Creation
 export function categoryValidation() {
   return [
-    body('name')
+    body('nafn')
       .trim()
       .notEmpty()
       .withMessage('Nafn má ekki vera tómt')
@@ -17,24 +17,24 @@ export function categoryValidation() {
 // Validation for Question Creation
 export function questionValidation() {
   return [
-    body('question_text')
+    body('spurning')
       .trim()
       .notEmpty()
       .withMessage('Spurning má ekki vera tóm')
       .isLength({ min: 10, max: 500 })
       .withMessage('Spurning verður að vera á milli 10 og 500 stafa')
       .customSanitizer((value) => xss(value)),
-    body('category_id').isInt().withMessage('Veldu gilda flokk'),
+    body('flokkur_id').isInt().withMessage('Veldu gildann flokk'),
   ];
 }
 
 // XSS Protection Middleware
 export function xssSanitizationMiddleware() {
   return [
-    body('name').customSanitizer((value) => xss(value)),
-    body('question_text').customSanitizer((value) => xss(value)),
-    body('category_id').customSanitizer((value) => xss(value)),
-    body('answers.*.text').customSanitizer((value) => xss(value)),
+    body('nafn').customSanitizer((value) => xss(value)),
+    body('spurning').customSanitizer((value) => xss(value)),
+    body('flokkur_id').customSanitizer((value) => xss(value)),
+    body('spurningar.*.spurning').customSanitizer((value) => xss(value)),
   ];
 }
 
@@ -45,7 +45,7 @@ export function validationCheck(req, res, next) {
     return res.render('form', {
       title: 'Búa til flokk',
       errors: errors.array().map((err) => err.msg),
-      name: req.body.name,
+      name: req.body.nafn,
     });
   }
   next();
@@ -58,8 +58,8 @@ export function questionValidationCheck(req, res, next) {
     return res.render('question_form', {
       title: 'Ný spurning',
       errors: errors.array().map((err) => err.msg),
-      question_text: req.body.question_text,
-      category_id: req.body.category_id,
+      spurning: req.body.spurning,
+      flokkur_id: req.body.flokkur_id,
     });
   }
   next();

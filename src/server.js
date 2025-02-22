@@ -1,3 +1,13 @@
+/*********************************************************************
+ * @ClassName server
+ * server.js er entry pointið í appið. Það setur upp Express server,
+ * sér um styllingar og segir servernum að nota routes.js til þess
+ * að sjá um mismunandi vef requestur.
+ *
+ * Vorönn 2025
+ * @author Ásdís Valtýsdóttir
+ *********************************************************************/
+
 import express from 'express';
 import { router } from './routes.js';
 
@@ -16,7 +26,7 @@ const viewsPath = path.join(__dirname, 'views');
 app.set('views', viewsPath);
 app.set('view engine', 'ejs');
 
-app.use('/', router);
+app.use('/', router); // any incoming request is handled by routes.js
 
 const hostname = '127.0.0.1';
 const port = 3000;

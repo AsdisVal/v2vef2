@@ -1,12 +1,12 @@
 <%- include('header') -%>
 
-<% if (categories.length === 0) { %>
+<% if (flokkar.length === 0) { %>
   <p>Engir flokkar fundust.</p>
 <% } else { %>
   <ul>
-    <% for (const category of categories) { %>
+    <% for (const flokkur of flokkar) { %>
       <li>
-        <a href="/category/<%=category.id%>"><%=category.name%></a>
+        <a href="/flokkur/<%=flokkur.id%>"><%=flokkur.nafn%></a>
       </li>
     <% 
     } %>
