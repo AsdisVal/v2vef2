@@ -1,6 +1,7 @@
 import pg from 'pg';
 import { environment } from './environment.js';
 import { logger as loggerSingleton } from './logger.js';
+import xss from 'xss';
 
 /**
  * Database class.
@@ -103,19 +104,47 @@ export class Database {
     WHERE f.nafn = $1;
   `;
     const result = await this.query(queryQuestions, [category]);
-    if (!result) {
-      return null;
+    if (!result || result.rows.length === 0) {
+      return [];
+    }
+    const questions = result.rows;
+    const questionIds = questions.map((q) => q.id);
+
+    const answerQuery = `
+    SELECT id, svar AS text, spurning_id, rett_svar
+    FROM svor
+    WHERE spurning_id = ANY($1);
+    `;
+    const answerResult = await this.query(answerQuery, [questionIds.join(',')]);
+
+    const answerMap = {};
+    if (!answerResult || !answerResult.rows) {
+      return [];
+    }
+    for (const answer of answerResult.rows) {
+      if (!answerMap[answer.spurning_id]) {
+        answerMap[answer.spurning_id] = [];
+      }
+      answerMap[answer.spurning_id].push(answer);
     }
 
-    for (const question of result.rows) {
-      const answerQuery = `SELECT * FROM svor WHERE spurning_id = $1`;
-      const answers = await this.query(answerQuery, [question.id]);
-      if (answers) {
-        answers.rows.sort(() => Math.random() - 0.5);
-        question.answers = answers.rows;
+    for (const question of questions) {
+      question.answers = (answerMap[question.id] || []).sort(
+        () => Math.random() - 0.5
+      );
+
+      let cleanedText = stringToHtml(question.text);
+      cleanedText = cleanedText
+        .replace(/\\n/g, '\n')
+        .replace(/\n\n/g, '</p><p>')
+        .replace(/\n/g, '<br>');
+      question.text = cleanedText;
+
+      for (const answer of question.answers) {
+        answer.text = xss(answer.text);
       }
     }
-    return result.rows;
+    return questions;
   }
 }
 
@@ -141,4 +170,22 @@ export function getDatabase() {
   db.open();
 
   return db;
+}
+
+function stringToHtml(str) {
+  if (!str) return '';
+
+  // Escape HTML special characters to prevent rendering issues
+  const escapedStr = str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
+  // Convert double newlines to paragraph tags
+  const withParagraphs = escapedStr.replace(/\n\n/g, '</p><p>');
+
+  // Convert single newlines to <br> tags
+  return `<p>${withParagraphs.replace(/\n/g, '<br>')}</p>`;
 }
