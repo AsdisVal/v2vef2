@@ -94,28 +94,28 @@ router.get('/form', async (req, res) => {
   }
 });
 
-router.post(
-  '/question-form',
+router.get(
+  '/flokka-form',
   [
-    body('category')
+    body('flokkur')
       .trim()
       .notEmpty()
       .withMessage('Flokkur má ekki vera tómur')
       .isLength({ min: 3, max: 64 })
-      .withMessage('Nafn verður að vera á milli 3 og 64 stafa')
+      .withMessage('Nafn á flokki verður að vera á milli 3 og 64 stafa')
       .matches(/^[A-Za-zÆÐÞÖáéíóúýæðþöÁÉÍÓÚÝ\s]+$/)
-      .withMessage('Nafn má aðeins innihalda stafi og bil'),
+      .withMessage('Nafn á flokki má aðeins innihalda stafi og bil'),
   ],
   async (req, res) => {
     const errors = validationResult(req);
-    let { name } = req.body;
-    name = xss(name); // Sanitize input
+    let { newCat } = req.body;
+    newCat = xss(newCat); // Sanitize input
 
     if (!errors.isEmpty()) {
-      return res.render('form', {
+      return res.render('category', {
         title: 'Búa til flokk',
         errors: errors.array().map((err) => err.msg),
-        name,
+        newCat,
       });
     }
 
@@ -123,18 +123,17 @@ router.post(
       const db = getDatabase();
 
       const existingCategory = await db?.query(
-        'SELECT * FROM flokkar WHERE nafm = $1',
-        [name]
+        'SELECT * FROM flokkar WHERE nafn = $1',
+        [newCat]
       );
       if (existingCategory && existingCategory.rows.length > 0) {
-        return res.render('form', {
-          title: 'Búa til flokk',
+        return res.render('category', {
           errors: ['Flokkur með þessu nafni er þegar til'],
-          name,
+          newCat,
         });
       }
 
-      await db?.query('INSERT INTO categories (name) VALUES ($1)', [name]);
+      await db?.query('INSERT INTO flokkar (newCat) VALUES ($1)', [newCat]);
 
       res.render('form-created', { title: 'Flokkur búinn til' });
     } catch (e) {

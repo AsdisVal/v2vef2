@@ -16,6 +16,7 @@ import path from 'path';
 
 const app = express();
 
+app.use(express.json());
 app.use(express.urlencoded({ extended: true })); //leyfir url encoded gögnum
 
 const __filename = fileURLToPath(import.meta.url);
@@ -29,7 +30,7 @@ app.set('view engine', 'ejs');
 app.use('/', router); // any incoming request is handled by routes.js
 
 const hostname = '127.0.0.1';
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 app.listen(port, hostname, () => {
   console.log(`Server running at http://${hostname}:${port}/`);
