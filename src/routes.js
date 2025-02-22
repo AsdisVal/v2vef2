@@ -18,16 +18,32 @@ import xss from 'xss';
 export const router = express.Router();
 
 router.get('/', async (req, res) => {
-  const db = getDatabase();
-  const flokkar = await db?.getAllCategories();
-  res.status(200).render('index', { title: 'Forsíða', flokkar });
+  try {
+    const db = getDatabase();
+    const flokkar = await db?.getAllCategories();
+    res.status(200).render('index', { title: 'Forsíða', flokkar });
+  } catch (error) {
+    console.error('Error fetching categories: ', error);
+    res.status(500).send('Villa við að sækja flokkana.');
+  }
 });
 
-router.get('/spurningar/:flokkar', async (req, res) => {
-  const nafnFlokks = req.params.flokkar;
-  const db = getDatabase();
-  const spurningarFlokksins = await db?.getQuestions(nafnFlokks);
-  res.render('questions', { spurningarFlokksins, nafnFlokks });
+router.get('/spurningar/:flokkur', async (req, res) => {
+  try {
+    const db = getDatabase();
+    const flokkur = xss(req.params.flokkur.trim());
+    const spurningarFlokksins = await db?.getQuestions(flokkur);
+
+    if (!spurningarFlokksins || spurningarFlokksins.length === 0) {
+      return res
+        .status(404)
+        .render('404', { message: 'Engar spurningar fundust í þessum flokki' });
+    }
+    res.render('questions', { spurningarFlokksins, nafnFlokks: flokkur });
+  } catch (error) {
+    console.error('Error fetching questions:', error);
+    res.status(500).send('Villa við að sækja spurningar.');
+  }
 });
 
 // this is triggered when a user submits a form

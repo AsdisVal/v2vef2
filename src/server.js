@@ -10,11 +10,12 @@
 
 import express from 'express';
 import { router } from './routes.js';
-
+import morgan from 'morgan';
 import { fileURLToPath } from 'url';
 import path from 'path';
 
 const app = express();
+app.use(morgan('dev'));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true })); //leyfir url encoded gögnum
@@ -28,6 +29,10 @@ app.set('views', viewsPath);
 app.set('view engine', 'ejs');
 
 app.use('/', router);
+
+app.use((req, res) => {
+  res.status(404).render('404', { message: 'Síða fannst ekki.' });
+});
 
 const hostname = '127.0.0.1';
 const port = 3000;
