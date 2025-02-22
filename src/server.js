@@ -27,10 +27,10 @@ const viewsPath = path.join(__dirname, 'views');
 app.set('views', viewsPath);
 app.set('view engine', 'ejs');
 
-app.use('/', router); // any incoming request is handled by routes.js
+app.use('/', router);
 
 const hostname = '127.0.0.1';
-const port = process.env.PORT || 3000;
+const port = 3000;
 
 app.listen(port, hostname, () => {
   console.log(`Server running at http://${hostname}:${port}/`);
