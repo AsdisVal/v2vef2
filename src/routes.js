@@ -24,8 +24,10 @@ router.get('/', async (req, res) => {
 });
 
 router.get('/spurningar/:flokkar', async (req, res) => {
-  const nafnFlokks = req.params.flokkar; //req = request btw
-  const spurningarFlokksins = await getDatabase().getQuestions(nafnFlokks);
+  const nafnFlokks = req.params.flokkar;
+  const db = getDatabase();
+  const spurningarFlokksins = await db?.getQuestions(nafnFlokks);
+  res.render('questions', { spurningarFlokksins, nafnFlokks });
 });
 
 // this is triggered when a user submits a form
