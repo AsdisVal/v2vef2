@@ -91,21 +91,31 @@ export class Database {
   }
 
   async getAllCategories() {
-    const cats = await this.query('SELECT * FROM flokkar');
-    if (cats) {
-      return cats.rows;
-    }
-    return null;
+    const result = await this.query('SELECT * FROM flokkar');
+    return result ? result.rows : null;
   }
 
-  async getQuestions(selectedCategory) {
+  async getQuestions(category) {
     const queryQuestions = `
     SELECT s.id AS id, s.spurning AS text, f.nafn AS category
     FROM spurningar AS s
     JOIN flokkar AS f ON s.flokkur_id = f.id
     WHERE f.nafn = $1;
   `;
-    const result = await this.query(queryQuestions, [selectedCategory]);
+    const result = await this.query(queryQuestions, [category]);
+    if (!result) {
+      return null;
+    }
+
+    for (const question of result.rows) {
+      const answerQuery = `SELECT * FROM svor WHERE spurning_id = $1`;
+      const answers = await this.query(answerQuery, [question.id]);
+      if (answers) {
+        answers.rows.sort(() => Math.random() - 0.5);
+        question.answers = answers.rows;
+      }
+    }
+    return result.rows;
   }
 }
 
