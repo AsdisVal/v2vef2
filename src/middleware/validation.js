@@ -1,5 +1,6 @@
 import { body, validationResult } from 'express-validator';
 import xss from 'xss';
+import router from '../routes';
 
 // Validation for Category Creation
 export function categoryValidation() {
@@ -12,6 +13,17 @@ export function categoryValidation() {
       .withMessage('Nafn verður að vera á milli 3 og 64 stafa')
       .customSanitizer((value) => xss(value)),
   ];
+}
+
+export async function validateCategory(req, res, next) {
+  const { category } = req.params;
+  const validCategories = ['html', 'css', 'javascript'];
+  if (!validCategories.includes(category)) {
+    return res.status(404).render('error', {
+      message: 'Ógildur flokkur',
+    });
+  }
+  next();
 }
 
 // Validation for Question Creation

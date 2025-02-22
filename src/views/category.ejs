@@ -1,39 +1,35 @@
-<%- include('header') -%>
+<!DOCTYPE html>
+<html lang="is">
+  <head>
+    <%- include('partials/head') %>
+    <title><%= category.toUpperCase() %> Spurningar</title>
+  </head>
+  <body>
+    <header>
+      <h1><%= category.toUpperCase() %> Spurningar</h1>
+      <a href="/">Til baka</a>
+    </header>
 
-<h1>Spurningar í <%= title %></h1>
-
-<% if (questions.length === 0) { %>
-  <p>Engar spurningar í þessum flokki.</p>
-<% } else { %>
-  <% questions.forEach(question => { %>
-    <div class="question">
-      <h3><%= question.text %></h3>
-      <ul>
-        <% question.answers.forEach(answer => { %>
-          <li>
-            <button onclick="checkAnswer('<%= answer.id %>', '<%= answer.correct %>')">
-              <%= answer.text %>
-            </button>
-          </li>
-        <% }) %>
-      </ul>
-      <p id="answer-<%= question.id %>" style="display:none; color: green;">
-        Rétt svar: <%= question.answers.find(a => a.correct).text %>
-      </p>
-    </div>
-  <% }) %>
-<% } %>
-
-<script>
-  function checkAnswer(answerId, isCorrect) {
-    const answerElement = document.getElementById('answer-' + answerId);
-    if (isCorrect) {
-      alert('Rétt svar!');
-      answerElement.style.display = 'block';
-    } else {
-      alert('Rangt svar! Reyndu aftur.');
-    }
-  }
-</script>
-
-<%- include('footer') -%>
+    <main class="category-container">
+      <% questions.forEach(question => { %>
+        <div class="question-card">
+          <h2><%= question.question_text %></h2>
+          <div class="answers">
+            <% question.answers.forEach(answer => {
+              <div class="answer <%= answer.is_correct ? 'correct' : '' %>">
+                <input 
+                type="radio"
+                name="question-<%= question.question_id %>"
+                id="answer-<%= answer.answer_id %>"
+                >
+                <label for="answer-<%= answer.answer_id %>">
+                  <%= answer.answer_text %>
+                </label>
+              </div>
+            <% }) %>
+          </div>
+        </div>
+      <% }) %>
+    </main>
+  </body>
+</html>

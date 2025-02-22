@@ -103,10 +103,13 @@ export class Database {
     JOIN flokkar AS f ON s.flokkur_id = f.id
     WHERE f.nafn = $1;
   `;
+
     const result = await this.query(queryQuestions, [category]);
+    console.log('spurningar náðust');
     if (!result || result.rows.length === 0) {
       return [];
     }
+
     const questions = result.rows;
     const questionIds = questions.map((q) => q.id);
 
@@ -120,31 +123,32 @@ export class Database {
     const answerMap = {};
     if (!answerResult || !answerResult.rows) {
       return [];
-    }
-    for (const answer of answerResult.rows) {
-      if (!answerMap[answer.spurning_id]) {
-        answerMap[answer.spurning_id] = [];
+    } else {
+      for (const answer of answerResult.rows) {
+        if (!answerMap[answer.spurning_id]) {
+          answerMap[answer.spurning_id] = [];
+        }
+        answerMap[answer.spurning_id].push(answer);
       }
-      answerMap[answer.spurning_id].push(answer);
-    }
 
-    for (const question of questions) {
-      question.answers = (answerMap[question.id] || []).sort(
-        () => Math.random() - 0.5
-      );
+      for (const question of questions) {
+        question.answers = (answerMap[question.id] || []).sort(
+          () => Math.random() - 0.5
+        );
 
-      let cleanedText = stringToHtml(question.text);
-      cleanedText = cleanedText
-        .replace(/\\n/g, '\n')
-        .replace(/\n\n/g, '</p><p>')
-        .replace(/\n/g, '<br>');
-      question.text = cleanedText;
+        let cleanedText = stringToHtml(question.text);
+        cleanedText = cleanedText
+          .replace(/\\n/g, '\n')
+          .replace(/\n\n/g, '</p><p>')
+          .replace(/\n/g, '<br>');
+        question.text = cleanedText;
 
-      for (const answer of question.answers) {
-        answer.text = xss(answer.text);
+        for (const answer of question.answers) {
+          answer.text = xss(answer.text);
+        }
       }
+      return questions;
     }
-    return questions;
   }
 }
 
@@ -188,4 +192,23 @@ function stringToHtml(str) {
 
   // Convert single newlines to <br> tags
   return `<p>${withParagraphs.replace(/\n/g, '<br>')}</p>`;
+}
+
+export async function getCategoryQuestions(categoryName) {
+  const query = `
+  SELECT
+  s.id AS question_id,
+  s.spurning AS question_text,
+  sv.id AS answer_id,
+  sv.svar AS answer_text,
+  sv.rett_svar AS is_correct
+  FROM flokkar f
+  JOIN spurningar s ON f.id = s.flokkur_id
+  JOIN svor sv ON s.id = sv.spurning_id
+  WHERE f.nafn = $1
+  ORDER BY s.id, sv.id;
+  `;
+
+  const result = await Pool.query(query, [categoryName]);
+  return result.rows;
 }

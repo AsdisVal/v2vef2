@@ -11,9 +11,10 @@
  *********************************************************************/
 
 import express from 'express';
-import { getDatabase } from './lib/db.client.js';
+import { getDatabase, getCategoryQuestions } from './lib/db.client.js';
 import { body, validationResult } from 'express-validator';
 import xss from 'xss';
+import { validateCategory } from './middleware/validation.js';
 
 export const router = express.Router();
 
@@ -28,23 +29,31 @@ router.get('/', async (req, res) => {
   }
 });
 
-router.get('/spurningar/:flokkur', async (req, res) => {
+// Category route
+router.get('/spurningar/:category', validateCategory, async (req, res) => {
   try {
-    const db = getDatabase();
-    const flokkur = xss(req.params.flokkur.trim());
-    const spurningarFlokksins = await db?.getQuestions(flokkur);
+    const category = req.params.category;
+    const questions = await getCategoryQuestions(category);
 
-    if (!spurningarFlokksins || spurningarFlokksins.length === 0) {
-      return res
-        .status(404)
-        .render('404', { message: 'Engar spurningar fundust í þessum flokki' });
+    if (questions.length === 0) {
+      return res.status(404).render('error', {
+        message: 'Flokkur fannst ekki',
+      });
     }
-    res.render('questions', { spurningarFlokksins, nafnFlokks: flokkur });
+
+    res.render('category', {
+      category,
+      questions,
+    });
   } catch (error) {
-    console.error('Error fetching questions:', error);
-    res.status(500).send('Villa við að sækja spurningar.');
+    console.error(error);
+    res.status(500).render('error', {
+      message: 'Villa kom upp',
+    });
   }
 });
+
+export default router;
 
 // this is triggered when a user submits a form
 router.post('/form', async (req, res) => {
