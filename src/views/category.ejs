@@ -23,7 +23,7 @@
                 id="answer-<%= answer.answer_id %>"
                 >
                 <label for="answer-<%= answer.answer_id %>">
-                  <%= answer.answer_text %>
+                  <%= xss(answer.answer_text) %>
                 </label>
               </div>
             <% }) %>
