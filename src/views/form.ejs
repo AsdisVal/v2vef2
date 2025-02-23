@@ -1,21 +1,78 @@
 <%- include('header') -%>
+<% if (errors && errors.length) { %>
+  <div class="errors">
+    <% errors.forEach(error => { %>
+      <p><%= error %></p>
+    <% }) %>
+  </div>
+<% } %>
 
 <form method="post" action="/form">
+  <div>
+    <label for="question">Spurning:</label>
+    <textarea
+    id="question"
+    name="question"
+    required
+    minlength="10"
+    maxlength="255"
+    ><%= formData?.question %></textarea>
+  </div>
+  <div>
+    <label for="category">Flokkur:</label>
+    <select id="category" name="category" required>
+      <% categories.forEach(category => { %>
+        <option 
+          value="<%= category.id %>"
+          <%= formData?.category == category.id ? 'selected' : '' %>
+        >
+          <%= category.name %>
+        </option>
+      <% }) %>
+    </select>
+  </div>
 
-  <label for="name">Heiti flokks:</label>
-  <input type="text" id="name" name="name">
-  <input type="number" id="name" name="number">
-  <label>rétt svar #1: <input type="radio" id="name" name="rett_svar" value="1"></label>
-  <label>rétt svar #2: <input type="radio" id="name" name="rett_svar" value="1"></label>
-  <label>rétt svar #3: <input type="radio" id="name" name="rett_svar" value="1"></label>
+  <div id="answers">
+    <% (formData?.answers || Array(3).fill({})).forEach((answer, index) => { %>
+      <div class="answer">
+        <input 
+          type="text" 
+          name="answers[<%= index %>][text]" 
+          value="<%= answer.text %>"
+          required
+        >
+        <label>
+          <input 
+            type="radio" 
+            name="answers[<%= index %>][correct]"
+            <%= answer.correct ? 'checked' : '' %>
+          >
+          Rétt svar
+        </label>
+      </div>
+    <% }) %>
+  </div>
 
-  <input type="checkbox" id="name" name="checkbox">
-  <select>
-    <option>foo</option>
-    <option value="foobar">bar</option>
-  </select>
-  <textarea name="text"></textarea>
-  <button type="submit">Búa til flokk</button>
+  <button type="button" id="addAnswer">Bæta við svari</button>
+  <button type="submit">Vista spurningu</button>
 </form>
+
+<script>
+  document.getElementById('addAnswer').addEventListener('click', () => {
+    const container = document.getElementById('answers');
+    const index = container.children.length;
+    
+    const div = document.createElement('div');
+    div.className = 'answer';
+    div.innerHTML = `
+      <input type="text" name="answers[${index}][text]" required>
+      <label>
+        <input type="radio" name="answers[${index}][correct]">
+        Rétt svar
+      </label>
+    `;
+    container.appendChild(div);
+  });
+</script>
 
 <%- include('footer') -%>
