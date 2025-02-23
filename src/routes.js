@@ -35,7 +35,7 @@ router.get('/spurningar/:category', async (req, res) => {
     res.render('questions', { questions, categoryName });
   } catch (e) {
     console.error('Error loading category', e);
-    res.status(500).render('error', { title: 'Úbbs 404' });
+    res.status(500).render('error', { title: 'Úbbs 500' });
   }
 });
 
