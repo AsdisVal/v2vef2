@@ -109,7 +109,9 @@ router.get('/spurningar/:category', async (req, res) => {
     const categoryId = Number(req.params.category);
     const db = getDatabase();
 
-    const categoryResult = await db?.query('SELECT name FROM categories');
+    const categoryResult = await db?.query(
+      'SELECT id FROM categories WHERE id = $1'
+    );
     if (!categoryResult?.rowCount) {
       return res.status(404).send('Flokkur fannst ekki');
     }
@@ -179,10 +181,6 @@ router.post('/form', async (req, res) => {
         errors: validation.errors,
       });
     }
-
-    // Start transaction :D
-    client = await db.pool.connect();
-    await client.query('BEGIN');
 
     // Insert question
     const questionResult = await client?.query(

@@ -92,62 +92,83 @@ export class Database {
   }
 
   async getAllCategories() {
-    const result = await this.query('SELECT * FROM flokkar');
-    return result ? result.rows : null;
+    const result = await this.query('SELECT * FROM categories');
+    return result.rows;
   }
 
   async getQuestions(category) {
-    const queryQuestions = `
-    SELECT s.id AS id, s.spurning AS text, f.nafn AS category
-    FROM spurningar AS s
-    JOIN flokkar AS f ON s.flokkur_id = f.id
-    WHERE f.nafn = $1;
-  `;
+    const questionQuery = `
+        SELECT q.id AS id, q.text, c.name AS category 
+        FROM questions AS q 
+        JOIN categories AS c ON q.category_id = c.id 
+        WHERE c.name = $1
+        `;
+    const result = await this.query(questionQuery, [category]);
 
-    const result = await this.query(queryQuestions, [category]);
-    console.log('spurningar náðust');
-    if (!result || result.rows.length === 0) {
-      return [];
+    for (const question of result.rows) {
+      const answerQuery = `
+        SELECT * FROM answers 
+        WHERE question_id = $1
+      `;
+      const answers = await this.query(answerQuery, [question.id]);
+      answers?.rows.sort(() => Math.random() - 0.5);
+      question.answers = answers?.rows;
     }
 
-    const questions = result.rows;
-    const questionIds = questions.map((q) => q.id);
-
-    const answerQuery = `
-    SELECT id, svar AS text, spurning_id, rett_svar
-    FROM svor
-    WHERE spurning_id = ANY($1);
-    `;
-    const answerResult = await this.query(answerQuery, [questionIds]);
-
-    const answerMap = {};
-    if (!answerResult || !answerResult.rows) {
-      return [];
-    } else {
-      for (const answer of answerResult.rows) {
-        if (!answerMap[answer.spurning_id]) {
-          answerMap[answer.spurning_id] = [];
-        }
-        answerMap[answer.spurning_id].push(answer);
+    for (const question of result.rows) {
+      let cleanedText = stringToHtml(question.text);
+      cleanedText = cleanedText.replace(/\\n/g, '\n');
+      cleanedText = cleanedText.replace(/\n\n/g, '</p><p>');
+      cleanedText = cleanedText.replace(/\n/g, '<br>');
+      question.text = cleanedText;
+      for (const answer of question.answers) {
+        answer.text = xss(answer.text);
       }
+    }
+    return result?.rows;
+  }
 
-      for (const question of questions) {
-        question.answers = (answerMap[question.id] || []).sort(
-          () => Math.random() - 0.5
-        );
-
-        let cleanedText = stringToHtml(question.text);
-        cleanedText = cleanedText
-          .replace(/\\n/g, '\n')
-          .replace(/\n\n/g, '</p><p>')
-          .replace(/\n/g, '<br>');
-        question.text = cleanedText;
-
-        for (const answer of question.answers) {
-          answer.text = xss(answer.text);
-        }
+  async createQuestion(question, category, answers, correctAnswer) {
+    const client = await this.connect();
+    try {
+      await client?.query('BEGIN');
+      const categoryList = 'SELECT id FROM categories WHERE id = $1';
+      const categoryResult = await client?.query(categoryList, [category]);
+      let categoryId = null;
+      if (categoryResult?.rows.length === 0) {
+        const insertCategoryList =
+          'INSERT INTO categories(name) VALUES ($1) RETURNING id';
+        const insertCategoryResult = await client?.query(insertCategoryList, [
+          category,
+        ]);
+        categoryId = insertCategoryResult.rows[0].id;
+      } else {
+        categoryId = categoryResult.rows[0].id;
       }
-      return questions;
+      const insertQuestionList =
+        'INSERT INTO questions(text, category_id) VALUES($1, $2) RETURNING id';
+      const insertQuestionList = await client.query(insertQuestionList, [
+        question,
+        categoryId,
+      ]);
+      const questionId = insertQuestionResult.rows[0].id;
+
+      await answers.map(async (answer, index) => {
+        const insertAnswerList =
+          'INSERT INTO answers(text, question_id, is_correct) VALUES($1, $2, $3)';
+        await client.query(insertAnswerList, [
+          answer,
+          questionId,
+          correctAnswer === index,
+        ]);
+      });
+
+      await client.query('COMMIT');
+    } catch (e) {
+      console.error('Error creating question', e);
+      await client?.query('ROLLBACK');
+    } finally {
+      client?.release();
     }
   }
 }
