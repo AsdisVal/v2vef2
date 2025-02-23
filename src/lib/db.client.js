@@ -1,8 +1,15 @@
+/*********************************************************************
+ * @FileName db.client.js
+ * Þetta býr til tenginguna á milli gagnanna í postgres og í js.
+ * Vorönn 2025
+ * @author Ásdís Valtýsdóttir
+ *********************************************************************/
+
 import pg from 'pg';
 import xss from 'xss';
 
 /**
- * Database class.
+ * Database class creates connection.
  */
 export class Database {
   /**
@@ -17,9 +24,13 @@ export class Database {
   pool = null;
 
   open() {
-    this.pool = new pg.Pool({ connectionString: this.connectionString });
+    this.pool = new pg.Pool({
+      connectionString: this.connectionString, 
+      ssl: {rejectUnauthorized: false}
+   });
+
     this.pool.on('error', (err) => {
-      this.logger.error('Database pool error:', err);
+      console.error('error occurred in db pool', err);
       this.close();
     });
   }
@@ -30,7 +41,7 @@ export class Database {
    */
   async close() {
     if (!this.pool) {
-      this.logger.error('unable to close database connection that is not open');
+      console.error('unable to close database connection that is not open');
       return false;
     }
 
@@ -137,19 +148,20 @@ export class Database {
         const insertCategoryResult = await client?.query(insertCategoryList, [
           category,
         ]);
-        categoryId = insertCategoryResult.rows[0].id;
-      } else {
-        categoryId = categoryResult.rows[0].id;
-      }
-      const insertQuestionList =
+        if (insertCategoryResult) {
+          categoryId = insertCategoryResult.rows[0].id;
+        } else {
+        categoryId = categoryResult?.rows[0]?.id;
+        }
+        const insertQuestionList =
         'INSERT INTO questions(text, category_id) VALUES($1, $2) RETURNING id';
-      const insertQuestionList = await client.query(insertQuestionList, [
+        const insertQuestionResult = await client.query(insertQuestionList, [
         question,
         categoryId,
-      ]);
-      const questionId = insertQuestionResult.rows[0].id;
+        ]);
+        const questionId = insertQuestionResult.rows[0].id;
 
-      await answers.map(async (answer, index) => {
+        await answers.map(async (answer, index) => {
         const insertAnswerList =
           'INSERT INTO answers(text, question_id, is_correct) VALUES($1, $2, $3)';
         await client.query(insertAnswerList, [
@@ -158,8 +170,9 @@ export class Database {
           correctAnswer === index,
         ]);
       });
-
-      await client.query('COMMIT');
+      if(client){
+        await client.query('COMMIT');
+      }
     } catch (e) {
       console.error('Error creating question', e);
       await client?.query('ROLLBACK');

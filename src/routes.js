@@ -1,5 +1,5 @@
 /*********************************************************************
- * @ClassName routes
+ * @FileName routes
  * routes.js skilgreinir margskonar leiðir(GET og POST request) sem
  * bregðast við gjörðum notandans.
  *
