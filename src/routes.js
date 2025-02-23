@@ -14,6 +14,7 @@ import express from 'express';
 import { getDatabase } from './lib/db.client.js';
 import xss from 'xss';
 export const router = express.Router(); // top level func
+import { Logger } from './lib/logger.js';
 
 // Heimaslóð
 router.get('/', async (req, res) => {
@@ -30,9 +31,6 @@ router.get('/', async (req, res) => {
 router.get('/spurningar/:category', async (req, res) => {
   try {
     const categoryName = req.params.category;
-    if (!categoryName) {
-      return res.status(404).send('Flokkur fannst ekki');
-    }
     const questions = await getDatabase()?.getQuestions(categoryName);
     res.render('questions', { questions, categoryName });
   } catch (e) {
