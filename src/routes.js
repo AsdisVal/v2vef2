@@ -17,18 +17,6 @@ import xss from 'xss';
 
 export const router = express.Router();
 
-// Helper to get categories with numeric IDs
-async function getCategories() {
-  const db = getDatabase();
-  const result = await db?.query('SELECT * FROM categories ORDER BY name');
-  return (
-    result?.rows.map((c) => ({
-      ...c,
-      id: Number(c.id),
-    })) || []
-  );
-}
-
 // validation function with type fixes
 function validateQuestion(data, categories) {
   const errors = [];
@@ -151,6 +139,9 @@ router.get('/spurningar/:category', async (req, res) => {
 // Question creation form
 router.get('/form', async (req, res) => {
   try {
+    console.log('POST /form');
+    console.log(req.params);
+
     const categories = await getCategories();
     res.render('form', {
       title: 'Búa til spurningu',
@@ -183,10 +174,7 @@ router.post('/form', async (req, res) => {
     }
 
     // Insert question
-    const questionResult = await client?.query(
-      'INSERT INTO questions (text, category_id) VALUES ($1, $2) RETURNING id',
-      [validation.cleaned.question, validation.cleaned.category]
-    );
+    const questionResult = await client.query();
 
     for (const answer of validation.cleaned.answers) {
       await client?.query(

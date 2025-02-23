@@ -25,9 +25,9 @@ export class Database {
 
   open() {
     this.pool = new pg.Pool({
-      connectionString: this.connectionString, 
-      ssl: {rejectUnauthorized: false}
-   });
+      connectionString: this.connectionString,
+      ssl: { rejectUnauthorized: false },
+    });
 
     this.pool.on('error', (err) => {
       console.error('error occurred in db pool', err);
@@ -49,7 +49,7 @@ export class Database {
       await this.pool.end();
       return true;
     } catch (e) {
-      this.logger.error('error closing database pool', { error: e });
+      console.error('error closing database pool', { error: e });
       return false;
     } finally {
       this.pool = null;
@@ -62,7 +62,7 @@ export class Database {
    */
   async connect() {
     if (!this.pool) {
-      this.logger.error('Reynt að nota gagnagrunn sem er ekki opinn');
+      console.error('Reynt að nota gagnagrunn sem er ekki opinn');
       return null;
     }
 
@@ -70,7 +70,7 @@ export class Database {
       const client = await this.pool.connect();
       return client;
     } catch (e) {
-      this.logger.error('Error connecting to the database', { error: e });
+      console.error('Error connecting to the database', { error: e });
       return null;
     }
   }
@@ -91,7 +91,7 @@ export class Database {
       const result = await client.query(query, values);
       return result;
     } catch (e) {
-      this.logger.error('Error running query', e);
+      console.error('Error occurred running a query', e);
       return null;
     } finally {
       client.release();
@@ -99,10 +99,23 @@ export class Database {
   }
 
   async getAllCategories() {
-    const result = await this.query('SELECT * FROM categories');
-    return result.rows;
+    const categoriesList = `
+      SELECT *
+      FROM categories    
+      `;
+    const result = await this.query(categoriesList);
+    if (result) {
+      return result.rows;
+    } else {
+      console.error('Unable to get categories');
+    }
   }
 
+  /**
+   * get the questions
+   * @param {any} category
+   * @returns questions
+   */
   async getQuestions(category) {
     const questionQuery = `
         SELECT q.id AS id, q.text, c.name AS category 
@@ -111,67 +124,77 @@ export class Database {
         WHERE c.name = $1
         `;
     const result = await this.query(questionQuery, [category]);
-
-    for (const question of result.rows) {
-      const answerQuery = `
-        SELECT * FROM answers 
-        WHERE question_id = $1
-      `;
-      const answers = await this.query(answerQuery, [question.id]);
-      answers?.rows.sort(() => Math.random() - 0.5);
-      question.answers = answers?.rows;
-    }
-
-    for (const question of result.rows) {
-      let cleanedText = stringToHtml(question.text);
-      cleanedText = cleanedText.replace(/\\n/g, '\n');
-      cleanedText = cleanedText.replace(/\n\n/g, '</p><p>');
-      cleanedText = cleanedText.replace(/\n/g, '<br>');
-      question.text = cleanedText;
-      for (const answer of question.answers) {
-        answer.text = xss(answer.text);
+    if (result) {
+      for (const question of result.rows) {
+        const answerQuery = `
+          SELECT * FROM answers 
+          WHERE question_id = $1
+        `;
+        const answers = await this.query(answerQuery, [question.id]);
+        answers?.rows.sort(() => Math.random() - 0.5);
+        question.answers = answers?.rows;
       }
+
+      for (const question of result.rows) {
+        let cleanedText = stringToHtml(question.text);
+        cleanedText = cleanedText.replace(/\\n/g, '\n');
+        cleanedText = cleanedText.replace(/\n\n/g, '</p><p>');
+        cleanedText = cleanedText.replace(/\n/g, '<br>');
+        question.text = cleanedText;
+        for (const answer of question.answers) {
+          answer.text = xss(answer.text);
+        }
+      }
+      return result.rows;
     }
-    return result?.rows;
   }
 
+  /**
+   * Example question:
+   * Category: HTMl, Question: Is it cool to use HTMl? Answer: Yes, No, Maybe, Absolutely not.
+   * @param {string} question
+   * @param {string} category
+   * @param {any} answers it has a string and boolean
+   * @param {boolean} correctAnswer
+   */
   async createQuestion(question, category, answers, correctAnswer) {
     const client = await this.connect();
     try {
       await client?.query('BEGIN');
-      const categoryList = 'SELECT id FROM categories WHERE id = $1';
-      const categoryResult = await client?.query(categoryList, [category]);
-      let categoryId = null;
-      if (categoryResult?.rows.length === 0) {
-        const insertCategoryList =
-          'INSERT INTO categories(name) VALUES ($1) RETURNING id';
-        const insertCategoryResult = await client?.query(insertCategoryList, [
-          category,
-        ]);
-        if (insertCategoryResult) {
-          categoryId = insertCategoryResult.rows[0].id;
-        } else {
-        categoryId = categoryResult?.rows[0]?.id;
-        }
-        const insertQuestionList =
-        'INSERT INTO questions(text, category_id) VALUES($1, $2) RETURNING id';
-        const insertQuestionResult = await client.query(insertQuestionList, [
-        question,
-        categoryId,
-        ]);
-        const questionId = insertQuestionResult.rows[0].id;
+      if (client) {
+        const categoryList = 'SELECT id FROM categories WHERE id = $1';
+        const categoryResult = await client.query(categoryList, [category]);
+        let categoryId = null;
+        if (categoryResult.rows.length === 0) {
+          const insertCategoryList =
+            'INSERT INTO categories(name) VALUES ($1) RETURNING id';
+          const insertCategoryResult = await client?.query(insertCategoryList, [
+            category,
+          ]);
+          if (insertCategoryResult) {
+            categoryId = insertCategoryResult.rows[0].id;
+          } else {
+            categoryId = categoryResult?.rows[0]?.id;
+          }
+          const insertQuestionList =
+            'INSERT INTO questions(text, category_id) VALUES($1, $2) RETURNING id';
+          const insertQuestionResult = await client.query(insertQuestionList, [
+            question,
+            categoryId,
+          ]);
+          const questionId = insertQuestionResult.rows[0].id;
 
-        await answers.map(async (answer, index) => {
-        const insertAnswerList =
-          'INSERT INTO answers(text, question_id, is_correct) VALUES($1, $2, $3)';
-        await client.query(insertAnswerList, [
-          answer,
-          questionId,
-          correctAnswer === index,
-        ]);
-      });
-      if(client){
-        await client.query('COMMIT');
+          await answers.map(async (answer, index) => {
+            const insertAnswerList =
+              'INSERT INTO answers(text, question_id, is_correct) VALUES($1, $2, $3)';
+            await client.query(insertAnswerList, [
+              answer,
+              questionId,
+              correctAnswer === index,
+            ]);
+          });
+          await client.query('COMMIT');
+        }
       }
     } catch (e) {
       console.error('Error creating question', e);
@@ -197,7 +220,11 @@ export function getDatabase() {
   if (!process.env) {
     return null;
   }
-  db = new Database(process.env.DATABASE_URL);
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl) {
+    throw new Error('DATABASE_URL is not defined');
+  }
+  db = new Database(databaseUrl);
   db.open();
 
   return db;
@@ -219,30 +246,4 @@ function stringToHtml(str) {
 
   // Convert single newlines to <br> tags
   return `<p>${withParagraphs.replace(/\n/g, '<br>')}</p>`;
-}
-
-export async function getCategoryQuestions(categoryName) {
-  const query = `
-    SELECT
-    s.id AS question_id,
-    s.spurning AS question_text,
-    jsonb_agg(
-      json_build_object(
-        'id', sv.id,
-      'text', sv.svar,
-      'is_correct', sv.rett_svar
-    )
-  ) AS answers
-  FROM flokkar f
-  JOIN spurningar s ON f.id = s.flokkur_id
-  JOIN svor sv ON s.id = sv.spurning_id
-  WHERE LOWER(f.nafn) = LOWER($1)
-  GROUP BY s.id
-  ORDER BY sv.id;
-  `;
-
-  const db = getDatabase();
-  const result = await db?.query(query, [categoryName]);
-
-  return result ? result.rows : [];
 }
