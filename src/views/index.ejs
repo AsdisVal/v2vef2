@@ -2,9 +2,9 @@
 
 <div class="container">
   <ul>
-    <% for (const flokkur of flokkar) { %>
+    <% for (const category of categories) { %>
       <li class="categories">
-        <a href="/spurningar/<%=flokkur.nafn%>"><%=flokkur.nafn%></a>
+        <a href="/spurningar/<%=category.id%>"><%=category.name%></a>
       </li>
     <% } %>
   </ul>

@@ -12,21 +12,24 @@
 
 import express from 'express';
 import { getDatabase } from './lib/db.client.js';
-import { environment } from './lib/environment.js';
 import { logger } from './lib/logger.js';
 import xss from 'xss';
-import { format } from 'morgan';
 
 export const router = express.Router();
 
-// Helper to get categories
+// Helper to get categories with numeric IDs
 async function getCategories() {
   const db = getDatabase();
   const result = await db?.query('SELECT * FROM categories ORDER BY name');
-  return result?.rows || [];
+  return (
+    result?.rowsmap((c) => ({
+      ...c,
+      id: Number(c.id),
+    })) || []
+  );
 }
 
-// validation func
+// validation function with type fixes
 function validateQuestion(data, categories) {
   const errors = [];
   const cleaned = {};
@@ -42,20 +45,21 @@ function validateQuestion(data, categories) {
     cleaned.question = xss(data.question.trim());
   }
 
-  // Category validation
-  const categoryExists = categories.some((c) => c.id === Number(data.category));
+  // Category validation with numeric comparison
+  const categoryId = Number(data.category);
+  const categoryExists = categories.some((c) => c.id === categoryId);
   if (!categoryExists) {
-    errors.push('Ógildur flokki valinn');
+    errors.push('Ógildur flokkur valinn');
   } else {
-    cleaned.category = Number(data.category);
+    cleaned.category = categoryId;
   }
 
-  // Answers validation
+  // Answers validation with fixed iteration
   const answers = [];
   let correctCount = 0;
 
   if (Array.isArray(data.answers)) {
-    data.answers.array.forEach((answer, index) => {
+    data.answers.forEach((answer, index) => {
       const text = answer.text?.trim() || '';
       const isCorrect = answer.correct == 'on';
 
@@ -104,8 +108,9 @@ router.get('/spurningar/:category', async (req, res) => {
   try {
     const categoryId = Number(req.params.category);
     const db = getDatabase();
+
     const categoryResult = await db?.query(
-      'SELECT name FROM categories WHERE id = $1',
+      'SELECT name FROM categories WHERE id = $1::integer',
       [categoryId]
     );
     if (!categoryResult?.rowCount) {
@@ -127,7 +132,7 @@ router.get('/spurningar/:category', async (req, res) => {
         ) as answers
       FROM questions
       LEFT JOIN answers ON answers.question_id = questions.id
-      WHERE questions.category_id = $1
+      WHERE questions.category_id = $1::integer
       GROUP BY questions.id
       ORDER BY questions.created DESC
     `,
@@ -179,8 +184,8 @@ router.post('/form', async (req, res) => {
     }
 
     // Start transaction :D
-    client = await db?.pool?.connect();
-    await client?.query('BEGIN');
+    client = await db.pool.connect();
+    await client.query('BEGIN');
 
     // Insert question
     const questionResult = await client?.query(
