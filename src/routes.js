@@ -12,10 +12,8 @@
 
 import express from 'express';
 import { getDatabase } from './lib/db.client.js';
-import { logger } from './lib/logger.js';
 import xss from 'xss';
-
-export const router = express.Router();
+export const router = express.Router(); // top level func
 
 // validation function with type fixes
 function validateQuestion(data, categories) {
@@ -80,122 +78,65 @@ function validateQuestion(data, categories) {
 // Heimaslóð
 router.get('/', async (req, res) => {
   try {
-    const categories = await getCategories();
-    res.render('index', {
-      title: 'Forsíða',
-      categories,
-    });
+    const categories = await getDatabase()?.getAllCategories();
+    res.render('index', { title: 'Forsíða', categories });
   } catch (error) {
     console.error('Error fetching categories: ', error);
-    res.status(500).send('Villa kom upp við að sækja flokkana.');
+    res.status(500).send('Villa kom upp við að sækja gagnagrunn og flokkana.');
   }
 });
 
 // Category questions page
 router.get('/spurningar/:category', async (req, res) => {
   try {
-    const categoryId = Number(req.params.category);
-    const db = getDatabase();
-
-    const categoryResult = await db?.query(
-      'SELECT id FROM categories WHERE id = $1'
-    );
-    if (!categoryResult?.rowCount) {
+    const categoryName = req.params.category;
+    if (!categoryName) {
       return res.status(404).send('Flokkur fannst ekki');
     }
-
-    // Get questions with answers
-    const questionsResult = await db?.query(
-      `
-      SELECT 
-        questions.id,
-        questions.text,
-        json_agg(
-          json_build_object(
-            'id', answers.id,
-            'text', answers.text,
-            'is_correct', answers.is_correct
-          )
-        ) as answers
-      FROM questions
-      LEFT JOIN answers ON answers.question_id = questions.id
-      WHERE questions.category_id = $1::integer
-      GROUP BY questions.id
-      ORDER BY questions.created DESC
-    `,
-      [categoryId]
-    );
-
-    res.render('category', {
-      title: categoryResult.rows[0].name,
-      questions: questionsResult?.rows || [],
-    });
+    const questions = await getDatabase()?.getQuestions(categoryName);
+    res.render('questions', { questions, categoryName });
   } catch (e) {
-    logger.error('Error loading category', e);
+    console.error('Error loading category', e);
     res.status(500).send('Villa kom upp');
   }
 });
 
 // Question creation form
-router.get('/form', async (req, res) => {
-  try {
-    console.log('POST /form');
-    console.log(req.params);
-
-    const categories = await getCategories();
-    res.render('form', {
-      title: 'Búa til spurningu',
-      categories,
-      formData: null,
-      errors: null,
-    });
-  } catch (e) {
-    logger.error('Error loading form', e);
-    res.status(500).send('Villa kom upp');
-  }
+router.get('/form', (req, res) => {
+  res.render('form', { title: 'Búa til flokk' });
 });
 
-// Handle question submission
+router.get('/form-created', (req, res) => {
+  res.render('form', { title: 'Flokkur var búinn til' });
+});
+
+/**
+ * I will use req.body (obj) that will contain data sent in the body of an HTTP request.
+ * Since data will be sent from the client to the server I need this object to do that.
+ */
 router.post('/form', async (req, res) => {
-  const db = getDatabase();
-  let client;
-
   try {
-    const categories = await getCategories();
-    const validation = validateQuestion(req.body, categories);
+    const { question, category, answers, correctAnswer } = req.body;
+    const cleanQuestion = xss(question);
+    await getDatabase()?.createQuestion(
+      cleanQuestion,
+      category,
+      answers,
+      correctAnswer
+    );
 
-    if (validation.errors.length > 0) {
-      return res.render('form', {
-        title: 'Búa til spurningu',
-        categories,
-        formData: req.body,
-        errors: validation.errors,
-      });
+    if (req.headers.accept === 'application/json') {
+      return res.json({ success: true, redirect: '/form-created' });
     }
 
-    // Insert question
-    const questionResult = await client.query();
-
-    for (const answer of validation.cleaned.answers) {
-      await client?.query(
-        'INSERT INTO answers (question_id, text, is_correct) VALUES ($1, $2, $3)',
-        [questionResult.rows[0].id, answer.text, answer.correct]
-      );
-    }
-    await client?.query('COMMIT');
-    res.redirect(`/spurningar/${validation.cleaned.category}`);
+    res.status(201).render('form-created', { title: 'Flokkur búinn til' });
   } catch (e) {
-    await client?.query('ROLLBACK');
-    logger.error('Errr saving question', e);
-    res.status(500).render('form', {
-      title: 'Búa til spurningu',
-      categories: await getCategories(),
-      formData: req.body,
-      errors: ['Villa við vistun spurningar'],
+    console.error('Það náðist ekki að búa til spurningu', e);
+    if (req.headers.accept === 'application/json') {
+      return res.status(500).json({ success: false, redirect: '/form-error' });
+    }
+    res.render('form-error', {
+      title: 'Villa við að búa til spurninguna þína.',
     });
-  } finally {
-    client?.release();
   }
 });
-
-export default router;

@@ -1,57 +1,52 @@
 <%- include('header') -%>
-<% if (errors && errors.length) { %>
-  <div class="errors">
-    <% errors.forEach(error => { %>
-      <p><%= error %></p>
-    <% }) %>
-  </div>
-<% } %>
 
-<form method="post" action="/form">
-  <div>
-    <label for="question">Spurning:</label>
-    <textarea
-    id="question"
-    name="question"
-    required
-    minlength="10"
-    maxlength="255"
-    ><%= formData?.question %></textarea>
-  </div>
-  <div>
-    <label for="category">Flokkur:</label>
-    // In your form.ejs, change category handling to use names
-    <select name="category">
-      <% categories.forEach(cat => { %>
-        <option value="<%= cat.name %>"><%= cat.name %></option>
-      <% }) %>
-    </select>
-  </div>
+<!DOCTYPE html>
+<html lang="is">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <style>
+        .success { color: green; }
+        .form-group { margin-bottom: 1rem; }
+        label { display: block; margin-bottom: 0.5rem; }
+    </style>
+</head>
+<body>
+    <% if (title === 'Flokkur var búinn til') { %>
+        <div class="success">
+            <h2>Flokkur búinn til!</h2>
+            <p>Þú getur nú búið til annan flokk eða farið aftur á heimasíðu.</p>
+        </div>
+    <% } else { %>
+        <h1>Búa til nýjan flokk</h1>
+        <form method="POST" action="/form">
+            <div class="form-group">
+                <label for="question">Spurning:</label>
+                <input type="text" id="question" name="question" required>
+            </div>
 
-  <div id="answers">
-    <% (formData?.answers || Array(3).fill({})).forEach((answer, index) => { %>
-      <div class="answer">
-        <input 
-          type="text" 
-          name="answers[<%= index %>][text]" 
-          value="<%= answer.text %>"
-          required
-        >
-        <label>
-          <input 
-            type="radio" 
-            name="answers[<%= index %>][correct]"
-            <%= answer.correct ? 'checked' : '' %>
-          >
-          Rétt svar
-        </label>
-      </div>
-    <% }) %>
-  </div>
+            <div class="form-group">
+                <label for="category">Flokkur:</label>
+                <input type="text" id="category" name="category" required>
+            </div>
 
-  <button type="button" id="addAnswer">Bæta við svari</button>
-  <button type="submit">Vista spurningu</button>
-</form>
+            <div class="form-group">
+                <label>Svarmöguleikar:</label>
+                <% [0,1,2,3].forEach(i => { %>
+                <div class="answer">
+                    <input type="text" name="answers[]" required>
+                    <input type="radio" name="correctAnswer" value="<%= i %>" <%= i === 0 ? 'checked' : '' %>>
+                    <label>Rétt svar</label>
+                </div>
+                <% }) %>
+            </div>
+
+            <button type="submit">Búa til flokk</button>
+        </form>
+    <% } %>
+</body>
+</html>
 
 <script>
   document.getElementById('addAnswer').addEventListener('click', () => {
