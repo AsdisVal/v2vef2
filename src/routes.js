@@ -13,6 +13,7 @@
 import express from 'express';
 import { getDatabase } from './lib/db.client.js';
 import xss from 'xss';
+import { title } from 'process';
 export const router = express.Router(); // top level func
 
 // Heimaslóð
@@ -34,7 +35,7 @@ router.get('/spurningar/:category', async (req, res) => {
     res.render('questions', { questions, categoryName });
   } catch (e) {
     console.error('Error loading category', e);
-    res.status(500).send('Villa kom upp');
+    res.status(500).render('error', { title: 'Úbbs 404' });
   }
 });
 

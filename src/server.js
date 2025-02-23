@@ -31,7 +31,7 @@ app.set('view engine', 'ejs');
 app.use('/', router);
 
 app.use((req, res) => {
-  res.status(404).render('404', { message: 'Síða fannst ekki.' });
+  res.status(404).render('error', { message: 'Síða fannst ekki.' });
 });
 
 const hostname = '127.0.0.1';
