@@ -1,23 +1,5 @@
 import pg from 'pg';
-import { environment } from './environment.js';
-import { logger as loggerSingleton } from './logger.js';
 import xss from 'xss';
-import express from 'express';
-
-export const router = express.Router();
-
-router.get('/', async (req, res) => {
-  try {
-    const db = getDatabase();
-    const categories = await db?.query('SELECT id, name FROM categories');
-    res.render('index', { title: 'Forsíða', categories });
-  } catch (e) {
-    console.error('Database error:', e);
-    res
-      .status(500)
-      .render('error', { title: 'Villa við að sækja flokka og headerinn' });
-  }
-});
 
 /**
  * Database class.
@@ -26,11 +8,9 @@ export class Database {
   /**
    * Create a new database connection.
    * @param {string} connectionString
-   * @param {import('./logger').Logger} logger
    */
-  constructor(connectionString, logger) {
+  constructor(connectionString) {
     this.connectionString = connectionString;
-    this.logger = logger;
   }
 
   /** @type {pg.Pool | null} */
@@ -201,13 +181,10 @@ export function getDatabase() {
     return db;
   }
 
-  const env = environment(process.env, loggerSingleton);
-
-  if (!env) {
+  if (!process.env) {
     return null;
   }
-  db = new Database(env.connectionString, loggerSingleton);
-  console.log(env.connectionString);
+  db = new Database(process.env.DATABASE_URL);
   db.open();
 
   return db;
