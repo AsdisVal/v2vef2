@@ -15,6 +15,7 @@ import { getDatabase } from './lib/db.client.js';
 import { environment } from './lib/environment.js';
 import { logger } from './lib/logger.js';
 import xss from 'xss';
+import { format } from 'morgan';
 
 export const router = express.Router();
 
@@ -159,84 +160,54 @@ router.get('/form', async (req, res) => {
   }
 });
 
-// this is triggered when a user submits a form
+// Handle question submission
 router.post('/form', async (req, res) => {
-  let { spurning, flokkur_id, svor } = req.body;
-
-  //hreinsa svörin
-  svor = svor.map((svr) => ({ ...svr, text: xss(svr.text) }));
+  const db = getDatabase();
+  let client;
 
   try {
-    const db = getDatabase();
+    const categories = await getCategories();
+    const validation = validateQuestion(req.body, categories);
 
-    const questionResult = await db?.query(
-      'INSERT INTO spurningar (spurning, flokkur_id) VALUES ($1, $2) RETURNING id',
-      [spurning, flokkur_id]
-    );
-
-    const questionId = questionResult?.rows[0].id;
-    if (!questionId) throw new Error('Question ID not found');
-
-    for (const answer of svor) {
-      await db?.query(
-        'INSERT INTO svor (spurning_id, svar, rett_svar) VALUES ($1, $2, $3)',
-        [questionId, answer.text, answer.rett_svar]
-      );
-    }
-    res.redirect('/form-created');
-  } catch (e) {
-    console.error('Database error:', e);
-    res
-      .status(500)
-      .render('error', { title: 'Villa við að bæta við spurningu' });
-  }
-});
-
-router.get(
-  '/flokka-form',
-  [
-    body('flokkur')
-      .trim()
-      .notEmpty()
-      .withMessage('Flokkur má ekki vera tómur')
-      .isLength({ min: 3, max: 64 })
-      .withMessage('Nafn á flokki verður að vera á milli 3 og 64 stafa')
-      .matches(/^[A-Za-zÆÐÞÖáéíóúýæðþöÁÉÍÓÚÝ\s]+$/)
-      .withMessage('Nafn á flokki má aðeins innihalda stafi og bil'),
-  ],
-  async (req, res) => {
-    const errors = validationResult(req);
-    let { newCat } = req.body;
-    newCat = xss(newCat); // Sanitize input
-
-    if (!errors.isEmpty()) {
-      return res.render('category', {
-        title: 'Búa til flokk',
-        errors: errors.array().map((err) => err.msg),
-        newCat,
+    if (validation.errors.length > 0) {
+      return res.render('form', {
+        title: 'Búa til spurningu',
+        categories,
+        formData: req.body,
+        errors: validation.errors,
       });
     }
 
-    try {
-      const db = getDatabase();
+    // Start transaction :D
+    client = await db?.pool?.connect();
+    await client?.query('BEGIN');
 
-      const existingCategory = await db?.query(
-        'SELECT * FROM flokkar WHERE nafn = $1',
-        [newCat]
+    // Insert question
+    const questionResult = await client?.query(
+      'INSERT INTO questions (text, category_id) VALUES ($1, $2) RETURNING id',
+      [validation.cleaned.question, validation.cleaned.category]
+    );
+
+    for (const answer of validation.cleaned.answers) {
+      await client?.query(
+        'INSERT INTO answers (question_id, text, is_correct) VALUES ($1, $2, $3)',
+        [questionResult.rows[0].id, answer.text, answer.correct]
       );
-      if (existingCategory && existingCategory.rows.length > 0) {
-        return res.render('category', {
-          errors: ['Flokkur með þessu nafni er þegar til'],
-          newCat,
-        });
-      }
-
-      await db?.query('INSERT INTO flokkar (nafn) VALUES ($1)', [newCat]);
-
-      res.render('form-created', { title: 'Flokkur búinn til' });
-    } catch (e) {
-      console.error('Database error:', e);
-      res.status(500).render('error', { title: 'Villa við að búa til flokk' });
     }
+    await client?.query('COMMIT');
+    res.redirect(`/spurningar/${validation.cleaned.category}`);
+  } catch (e) {
+    await client?.query('ROLLBACK');
+    logger.error('Errr saving question', e);
+    res.status(500).render('form', {
+      title: 'Búa til spurningu',
+      categories: await getCategories(),
+      formData: req.body,
+      errors: ['Villa við vistun spurningar'],
+    });
+  } finally {
+    client?.release();
   }
-);
+});
+
+export default router;
