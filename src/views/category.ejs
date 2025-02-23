@@ -1,35 +1,5 @@
-<!DOCTYPE html>
-<html lang="is">
-  <head>
-    <%- include('partials/head') %>
-    <title><%= category.toUpperCase() %> Spurningar</title>
-  </head>
-  <body>
-    <header>
-      <h1><%= category.toUpperCase() %> Spurningar</h1>
-      <a href="/">Til baka</a>
-    </header>
+<%- include('header') -%>
 
-    <main class="category-container">
-      <% questions.forEach(question => { %>
-        <div class="question-card">
-          <h2><%= question.question_text %></h2>
-          <div class="answers">
-            <% question.answers.forEach(answer => {
-              <div class="answer <%= answer.is_correct ? 'correct' : '' %>">
-                <input 
-                type="radio"
-                name="question-<%= question.question_id %>"
-                id="answer-<%= answer.answer_id %>"
-                >
-                <label for="answer-<%= answer.answer_id %>">
-                  <%= xss(answer.answer_text) %>
-                </label>
-              </div>
-            <% }) %>
-          </div>
-        </div>
-      <% }) %>
-    </main>
-  </body>
-</html>
+Spurningaflokkur!
+
+<%- include('footer') -%>
