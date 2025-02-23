@@ -143,6 +143,22 @@ router.get('/spurningar/:category', async (req, res) => {
   }
 });
 
+// Question creation form
+router.get('/form', async (req, res) => {
+  try {
+    const categories = await getCategories();
+    res.render('form', {
+      title: 'Búa til spurningu',
+      categories,
+      formData: null,
+      errors: null,
+    });
+  } catch (e) {
+    logger.error('Error loading form', e);
+    res.status(500).send('Villa kom upp');
+  }
+});
+
 // this is triggered when a user submits a form
 router.post('/form', async (req, res) => {
   let { spurning, flokkur_id, svor } = req.body;
@@ -173,28 +189,6 @@ router.post('/form', async (req, res) => {
     res
       .status(500)
       .render('error', { title: 'Villa við að bæta við spurningu' });
-  }
-});
-
-router.get('/form', async (req, res) => {
-  try {
-    const db = getDatabase();
-    console.log(db);
-
-    const categoryResult = await db?.query('SELECT id, nafn FROM flokkar');
-
-    if (!categoryResult || categoryResult.rows.length === 0) {
-      return res.status(404).render('error', {
-        title: 'Flokkur fannst ekki',
-        message: `Flokkurinn er ekki til.`,
-      });
-    }
-
-    const categories = categoryResult?.rows ?? [];
-    res.render('form', { title: 'Búa til spurningu', categories, errors: [] });
-  } catch (e) {
-    console.error('Database error fetching questions:', e);
-    res.status(500).send('Error loading form');
   }
 });
 
