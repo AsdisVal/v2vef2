@@ -48,6 +48,40 @@ function validateQuestion(data, categories) {
   } else {
     cleaned.category = Number(data.category);
   }
+
+  // Answers validation
+  const answers = [];
+  let correctCount = 0;
+
+  if (Array.isArray(data.answers)) {
+    data.answers.array.forEach((answer, index) => {
+      const text = answer.text?.trim() || '';
+      const isCorrect = answer.correct == 'on';
+
+      if (text.length > 0) {
+        if (text.length > 255) {
+          errors.push(`Svar ${index + 1} er of langt (hámark 255 stafir)`);
+        }
+        answers.push({
+          text: xss(text),
+          correct: isCorrect,
+        });
+        if (isCorrect) correctCount++;
+      }
+    });
+  }
+  if (answers.length < 2) {
+    errors.push('Það verða að vera að minnsta kosti 2 svör');
+  } else if (answers.length > 5) {
+    errors.push('Mest mega vera 5 svör');
+  }
+
+  if (correctCount !== 1) {
+    errors.push('Það verður að velja nákvæmlega eitt rétt svar');
+  }
+
+  cleaned.answers = answers;
+  return { errors, cleaned };
 }
 
 router.get('/', async (req, res) => {
