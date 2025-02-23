@@ -1,6 +1,6 @@
 import { body, validationResult } from 'express-validator';
 import xss from 'xss';
-import router from '../routes';
+import { getDatabase } from './db.client.js';
 
 // Validation for Category Creation
 export function categoryValidation() {
@@ -16,16 +16,27 @@ export function categoryValidation() {
 }
 
 export async function validateCategory(req, res, next) {
-  const { category } = req.params;
-  const validCategories = ['html', 'css', 'javascript'];
-  if (!validCategories.includes(category)) {
-    return res.status(404).render('error', {
-      message: 'Ógildur flokkur',
+  try {
+    const { category } = req.params;
+    const db = getDatabase();
+
+    const result = await db?.query(
+      'SELECT EXISTS(SELECT 1 FROM flokkar WHERE LOWER(nafn) = LOWER($1))',
+      [category]
+    );
+    if (result?.rows[0].exists) {
+      return res.status(404).render('error', {
+        message: 'Flokkur fannst ekki',
+      });
+    }
+    next();
+  } catch (error) {
+    console.error(error);
+    res.status(500).render('error', {
+      message: 'Villa við að sannprófa flokk',
     });
   }
-  next();
 }
-
 // Validation for Question Creation
 export function questionValidation() {
   return [

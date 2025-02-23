@@ -196,19 +196,24 @@ function stringToHtml(str) {
 
 export async function getCategoryQuestions(categoryName) {
   const query = `
-  SELECT
-  s.id AS question_id,
-  s.spurning AS question_text,
-  sv.id AS answer_id,
-  sv.svar AS answer_text,
-  sv.rett_svar AS is_correct
+    SELECT
+    s.id AS question_id,
+    s.spurning AS question_text,
+    jsonb_agg(
+      json_build_object(
+        'id', sv.id,
+      'text', sv.svar,
+      'is_correct', sv.rett_svar
+    )
+  ) AS answers
   FROM flokkar f
   JOIN spurningar s ON f.id = s.flokkur_id
   JOIN svor sv ON s.id = sv.spurning_id
-  WHERE f.nafn = $1
-  ORDER BY s.id, sv.id;
+  WHERE LOWER(f.nafn) = LOWER($1)
+  GROUP BY s.id
+  ORDER BY sv.id;
   `;
 
-  const result = await Pool.query(query, [categoryName]);
+  const result = await pool.query(query, [categoryName]);
   return result.rows;
 }

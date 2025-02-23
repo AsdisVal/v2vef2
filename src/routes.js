@@ -14,15 +14,19 @@ import express from 'express';
 import { getDatabase, getCategoryQuestions } from './lib/db.client.js';
 import { body, validationResult } from 'express-validator';
 import xss from 'xss';
-import { validateCategory } from './middleware/validation.js';
+import { validateCategory } from './lib/validation.js';
 
 export const router = express.Router();
 
 router.get('/', async (req, res) => {
   try {
     const db = getDatabase();
-    const flokkar = await db?.getAllCategories();
-    res.status(200).render('index', { title: 'Forsíða', flokkar });
+    const result = await db?.query('SELECT nafn FROM flokkar');
+    const flokkar = result?.rows.map((row) => row.nafn) || [];
+    res.render('index', {
+      title: 'Forsíða',
+      flokkar,
+    });
   } catch (error) {
     console.error('Error fetching categories: ', error);
     res.status(500).send('Villa við að sækja flokkana.');
@@ -32,16 +36,11 @@ router.get('/', async (req, res) => {
 // Category route
 router.get('/spurningar/:category', validateCategory, async (req, res) => {
   try {
-    const category = req.params.category;
+    const category = res.locals.category;
     const questions = await getCategoryQuestions(category);
 
-    if (questions.length === 0) {
-      return res.status(404).render('error', {
-        message: 'Flokkur fannst ekki',
-      });
-    }
-
     res.render('category', {
+      title: `${category.toUpperCase()} Spurningar`,
       category,
       questions,
     });
@@ -149,7 +148,7 @@ router.get(
         });
       }
 
-      await db?.query('INSERT INTO flokkar (newCat) VALUES ($1)', [newCat]);
+      await db?.query('INSERT INTO flokkar (nafn) VALUES ($1)', [newCat]);
 
       res.render('form-created', { title: 'Flokkur búinn til' });
     } catch (e) {
