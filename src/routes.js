@@ -11,12 +11,44 @@
  *********************************************************************/
 
 import express from 'express';
-import { getDatabase, getCategoryQuestions } from './lib/db.client.js';
-import { body, validationResult } from 'express-validator';
+import { getDatabase } from './lib/db.client.js';
+import { environment } from './lib/environment.js';
+import { logger } from './lib/logger.js';
 import xss from 'xss';
-import { validateCategory } from './lib/validation.js';
 
 export const router = express.Router();
+
+// Helper to get categories
+async function getCategories() {
+  const db = getDatabase();
+  const result = await db?.query('SELECT * FROM categories ORDER BY name');
+  return result?.rows || [];
+}
+
+// validation func
+function validateQuestion(data, categories) {
+  const errors = [];
+  const cleaned = {};
+
+  // Question validation
+  if (
+    !data.question ||
+    data.question.trim().length < 10 ||
+    data.question.trim().length > 255
+  ) {
+    errors.push('Spurning verður að vera á bilinu 10-255 stafir');
+  } else {
+    cleaned.question = xss(data.question.trim());
+  }
+
+  // Category validation
+  const categoryExists = categories.some((c) => c.id === Number(data.category));
+  if (!categoryExists) {
+    errors.push('Ógildur flokki valinn');
+  } else {
+    cleaned.category = Number(data.category);
+  }
+}
 
 router.get('/', async (req, res) => {
   try {
