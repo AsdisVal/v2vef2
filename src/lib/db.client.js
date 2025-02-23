@@ -16,8 +16,9 @@ export class Database {
    * Create a new database connection.
    * @param {string} connectionString
    */
-  constructor(connectionString) {
+  constructor(connectionString, logger) {
     this.connectionString = connectionString;
+    this.logger = logger;
   }
 
   /** @type {pg.Pool | null} */

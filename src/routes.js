@@ -14,7 +14,6 @@ import express from 'express';
 import { getDatabase } from './lib/db.client.js';
 import xss from 'xss';
 export const router = express.Router(); // top level func
-import { Logger } from './lib/logger.js';
 
 // Heimaslóð
 router.get('/', async (req, res) => {
