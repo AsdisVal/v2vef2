@@ -1,21 +1,21 @@
-<% if (errors.length > 0) { %>
-  <ul>
-    <% errors.forEach(error => { %>
-      <li><%= error %></li>
-    <% }) %>
-  </ul>
-<% } %>
+<%- include('header') -%>
 
-<form action="/question-form" method="POST">
-  <label for="category">Veldu flokk:</label>
-  <select name="category" id="category">
-    <% categories.forEach(category => { %>
-      <option value="<%= category.id %>"><%= category.nafn %></option>
-    <% }) %>
+<form method="post" action="/form">
+
+  <label for="name">Heiti flokks:</label>
+  <input type="text" id="name" name="name">
+  <input type="number" id="name" name="number">
+  <label>rétt svar #1: <input type="radio" id="name" name="rett_svar" value="1"></label>
+  <label>rétt svar #2: <input type="radio" id="name" name="rett_svar" value="1"></label>
+  <label>rétt svar #3: <input type="radio" id="name" name="rett_svar" value="1"></label>
+
+  <input type="checkbox" id="name" name="checkbox">
+  <select>
+    <option>foo</option>
+    <option value="foobar">bar</option>
   </select>
-  
-  <input type="submit" value="Búa til flokk">
+  <textarea name="text"></textarea>
+  <button type="submit">Búa til flokk</button>
 </form>
-
 
 <%- include('footer') -%>
