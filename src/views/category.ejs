@@ -1,5 +1,20 @@
 <%- include('header') -%>
 
-Spurningaflokkur!
+<% if (questions.length === 0) { %>
+  <p>Engar spurningar í þessum flokki</p>
+<% } %>
+
+<% questions.forEach(question => { %>
+  <div class="question">
+    <h3><%= question.text %></h3>
+    <div class="answers">
+      <% question.answers.forEach(answer => { %>
+        <div class="answer <%= answer.is_correct ? 'correct' : '' %>">
+          <%= answer.text %>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+<% }) %>
 
 <%- include('footer') -%>
