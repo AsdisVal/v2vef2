@@ -24,7 +24,7 @@ export async function validateCategory(req, res, next) {
       'SELECT EXISTS(SELECT 1 FROM flokkar WHERE LOWER(nafn) = LOWER($1))',
       [category]
     );
-    if (result?.rows[0].exists) {
+    if (!result?.rows[0].exists) {
       return res.status(404).render('error', {
         message: 'Flokkur fannst ekki',
       });

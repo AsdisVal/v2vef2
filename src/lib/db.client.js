@@ -118,7 +118,7 @@ export class Database {
     FROM svor
     WHERE spurning_id = ANY($1);
     `;
-    const answerResult = await this.query(answerQuery, [questionIds.join(',')]);
+    const answerResult = await this.query(answerQuery, [questionIds]);
 
     const answerMap = {};
     if (!answerResult || !answerResult.rows) {
@@ -214,6 +214,8 @@ export async function getCategoryQuestions(categoryName) {
   ORDER BY sv.id;
   `;
 
-  const result = await pool.query(query, [categoryName]);
-  return result.rows;
+  const db = getDatabase();
+  const result = await db?.query(query, [categoryName]);
+
+  return result ? result.rows : [];
 }

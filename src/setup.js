@@ -3,9 +3,9 @@ import { Database } from './lib/db.client.js';
 import { environment } from './lib/environment.js';
 import { logger as loggerSingleton } from './lib/logger.js';
 
-const SCHEMA_FILE = './sql/schema.sql';
-const DROP_SCHEMA_FILE = './sql/drop.sql';
-const INSERT_FILE = './sql/insert.sql';
+const SCHEMA_FILE = '../sql/schema.sql';
+const DROP_SCHEMA_FILE = '../sql/drop.sql';
+const INSERT_FILE = '../sql/insert.sql';
 
 /**
  * @param {Database} db
