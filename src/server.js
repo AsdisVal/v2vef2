@@ -18,7 +18,7 @@ const app = express();
 app.use(morgan('dev'));
 
 app.use(express.json());
-app.use(express.static(path.join(process.cwd(), 'public'))); //leyfir url encoded gögnum
+app.use(express.urlencoded({ extended: true })); //leyfir url encoded gögnum
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

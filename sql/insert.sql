@@ -199,7 +199,6 @@ VALUES (1, 'font-size: 20px;, color: green;', true),
         'Höfum skilgreinda tvo ása: aðalás og krossás sem eru samsíða; sjálfgefin röðun er á krossás frá vinstri til hægri.',
         false
     );
--- Insert into questions table
 INSERT INTO questions (category_id, text)
 VALUES (
         3,
@@ -213,7 +212,6 @@ VALUES (
         3,
         'Þegar við notum `fetch` í JavaScript ætti ferlið við að sækja gögn að vera'
     );
--- Insert into answers table
 INSERT INTO answers (question_id, text, is_correct)
 VALUES (1, '8', true),
     (1, '[8]', false),

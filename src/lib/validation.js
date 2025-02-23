@@ -1,39 +1,61 @@
 import xss from 'xss';
 
-export function validateQuestion(data, categories) {
+// validation function with type fixes
+function validateQuestion(data, categories) {
   const errors = [];
   const cleaned = {};
+
   // Question validation
   if (
     !data.question ||
-    data.question.length < 10 ||
-    data.question.length > 255
+    data.question.trim().length < 10 ||
+    data.question.trim().length > 255
   ) {
-    errors.push('Question must be between 10-255 characters');
+    errors.push('Spurning verður að vera á bilinu 10-255 stafir');
   } else {
     cleaned.question = xss(data.question.trim());
   }
 
-  // Category validation
-  if (!categories.includes(Number(data.category))) {
-    errors.push('Invalid category selected');
+  // Category validation with numeric comparison
+  const categoryId = Number(data.category);
+  const categoryExists = categories.some((c) => c.id === categoryId);
+  if (!categoryExists) {
+    errors.push('Ógildur flokkur valinn');
   } else {
-    cleaned.category = Number(data.category);
+    cleaned.category = categoryId;
   }
 
-  // Answer validation
-  const answers = data.answers
-    .map((a) => ({ text: xss(a.text.trim()), correct: a.correct === 'on' }))
-    .filter((a) => a.text.length > 0);
+  // Answers validation with fixed iteration
+  const answers = [];
+  let correctCount = 0;
 
-  if (answers.length < 2 || answers.length > 5) {
-    errors.push('Must have 2-5 answers');
+  if (Array.isArray(data.answers)) {
+    data.answers.forEach((answer, index) => {
+      const text = answer.text?.trim() || '';
+      const isCorrect = answer.correct == 'on';
+
+      if (text.length > 0) {
+        if (text.length > 255) {
+          errors.push(`Svar ${index + 1} er of langt (hámark 255 stafir)`);
+        }
+        answers.push({
+          text: xss(text),
+          correct: isCorrect,
+        });
+        if (isCorrect) correctCount++;
+      }
+    });
+  }
+  if (answers.length < 2) {
+    errors.push('Það verða að vera að minnsta kosti 2 svör');
+  } else if (answers.length > 5) {
+    errors.push('Mest mega vera 5 svör');
   }
 
-  const correctCount = answers.filter((a) => a.correct).length;
   if (correctCount !== 1) {
-    errors.push('Exactly one correct answer must be selected');
+    errors.push('Það verður að velja nákvæmlega eitt rétt svar');
   }
 
-  return { errors, cleaned: { ...cleaned, answers } };
+  cleaned.answers = answers;
+  return { errors, cleaned };
 }

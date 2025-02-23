@@ -1,14 +1,14 @@
-<%- include('header') -%>
+<%- include('header') %>
 
 <div class="container">
-  <h1>Flokkar</h1>
-  <ul>
-    <% for(const category of categories) { %>
-      <li class="categories">
-        <a href="/spurningar/<%= category.name%>"><%=category.name%></a>
-      </li>
-    <% } %>
-  </ul>
+    <h1>Flokkar</h1>
+    <ul>
+        <% for(const category of categories) {%>
+            <li class="flokkar">
+                <a href="/spurningar/<%= category.name %>"><%=category.name%></a>
+            </li>
+        <% } %>
+    </ul>
 </div>
 
-<%- include('footer') -%>
+<%- include('footer') %>
