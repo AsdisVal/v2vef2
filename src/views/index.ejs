@@ -1,10 +1,11 @@
 <%- include('header') -%>
 
 <div class="container">
+  <h1>Flokkar</h1>
   <ul>
-    <% for (const category of categories) { %>
+    <% for(const category of categories) { %>
       <li class="categories">
-        <a href="/spurningar/<%=category.name%>"><%=category.name%></a>
+        <a href="/spurningar/<%= category.name%>"><%=category.name%></a>
       </li>
     <% } %>
   </ul>

@@ -51,7 +51,7 @@ async function create() {
 
   logger.info('starting setup');
 
-  const db = new Database(env.connectionString, logger);
+  const db = new Database(env.connectionString);
   db.open();
 
   const resultFromFileSetup = await setupDbFromFiles(db, logger);
