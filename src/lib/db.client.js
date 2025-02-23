@@ -2,6 +2,22 @@ import pg from 'pg';
 import { environment } from './environment.js';
 import { logger as loggerSingleton } from './logger.js';
 import xss from 'xss';
+import express from 'express';
+
+export const router = express.Router();
+
+router.get('/', async (req, res) => {
+  try {
+    const db = getDatabase();
+    const categories = await db?.query('SELECT id, name FROM categories');
+    res.render('index', { title: 'Forsíða', categories });
+  } catch (e) {
+    console.error('Database error:', e);
+    res
+      .status(500)
+      .render('error', { title: 'Villa við að sækja flokka og headerinn' });
+  }
+});
 
 /**
  * Database class.
