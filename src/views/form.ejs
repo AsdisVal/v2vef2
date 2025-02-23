@@ -20,14 +20,10 @@
   </div>
   <div>
     <label for="category">Flokkur:</label>
-    <select id="category" name="category" required>
-      <% categories.forEach(category => { %>
-        <option 
-          value="<%= category.id %>"
-          <%= formData?.category == category.id ? 'selected' : '' %>
-        >
-          <%= category.name %>
-        </option>
+    // In your form.ejs, change category handling to use names
+    <select name="category">
+      <% categories.forEach(cat => { %>
+        <option value="<%= cat.name %>"><%= cat.name %></option>
       <% }) %>
     </select>
   </div>

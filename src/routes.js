@@ -22,7 +22,7 @@ async function getCategories() {
   const db = getDatabase();
   const result = await db?.query('SELECT * FROM categories ORDER BY name');
   return (
-    result?.rowsmap((c) => ({
+    result?.rows.map((c) => ({
       ...c,
       id: Number(c.id),
     })) || []
@@ -109,10 +109,7 @@ router.get('/spurningar/:category', async (req, res) => {
     const categoryId = Number(req.params.category);
     const db = getDatabase();
 
-    const categoryResult = await db?.query(
-      'SELECT name FROM categories WHERE id = $1::integer',
-      [categoryId]
-    );
+    const categoryResult = await db?.query('SELECT name FROM categories');
     if (!categoryResult?.rowCount) {
       return res.status(404).send('Flokkur fannst ekki');
     }
