@@ -84,41 +84,64 @@ function validateQuestion(data, categories) {
   return { errors, cleaned };
 }
 
+// Heimaslóð
 router.get('/', async (req, res) => {
   try {
-    const db = getDatabase();
-    const result = await db?.query('SELECT nafn FROM flokkar');
-    const flokkar = result?.rows.map((row) => row.nafn) || [];
+    const categories = await getCategories();
     res.render('index', {
       title: 'Forsíða',
-      flokkar,
+      categories,
     });
   } catch (error) {
     console.error('Error fetching categories: ', error);
-    res.status(500).send('Villa við að sækja flokkana.');
+    res.status(500).send('Villa kom upp við að sækja flokkana.');
   }
 });
 
-// Category route
-router.get('/spurningar/:category', validateCategory, async (req, res) => {
+// Category questions page
+router.get('/spurningar/:category', async (req, res) => {
   try {
-    const category = res.locals.category;
-    const questions = await getCategoryQuestions(category);
+    const categoryId = Number(req.params.category);
+    const db = getDatabase();
+    const categoryResult = await db?.query(
+      'SELECT name FROM categories WHERE id = $1',
+      [categoryId]
+    );
+    if (!categoryResult?.rowCount) {
+      return res.status(404).send('Flokkur fannst ekki');
+    }
+
+    // Get questions with answers
+    const questionsResult = await db?.query(
+      `
+      SELECT 
+        questions.id,
+        questions.text,
+        json_agg(
+          json_build_object(
+            'id', answers.id,
+            'text', answers.text,
+            'is_correct', answers.is_correct
+          )
+        ) as answers
+      FROM questions
+      LEFT JOIN answers ON answers.question_id = questions.id
+      WHERE questions.category_id = $1
+      GROUP BY questions.id
+      ORDER BY questions.created DESC
+    `,
+      [categoryId]
+    );
 
     res.render('category', {
-      title: `${category.toUpperCase()} Spurningar`,
-      category,
-      questions,
+      title: categoryResult.rows[0].name,
+      questions: questionsResult?.rows || [],
     });
-  } catch (error) {
-    console.error(error);
-    res.status(500).render('error', {
-      message: 'Villa kom upp',
-    });
+  } catch (e) {
+    logger.error('Error loading category', e);
+    res.status(500).send('Villa kom upp');
   }
 });
-
-export default router;
 
 // this is triggered when a user submits a form
 router.post('/form', async (req, res) => {
