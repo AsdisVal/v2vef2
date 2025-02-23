@@ -52,7 +52,7 @@ router.get('/form-created', (req, res) => {
  * I will use req.body (obj) that will contain data sent in the body of an HTTP request.
  * Since data will be sent from the client to the server I need this object to do that.
  */
-router.post('/form', async (req, res) => {
+router.post('/question-format', async (req, res) => {
   try {
     const { question, category, answers, correctAnswer } = req.body;
     const cleanQuestion = xss(question);
@@ -67,13 +67,13 @@ router.post('/form', async (req, res) => {
       return res.json({ success: true, redirect: '/form-created' });
     }
 
-    res.status(201).render('form-created', { title: 'Flokkur búinn til' });
+    res.status(201).render('form-created', { title: 'Spurning búin til!' });
   } catch (e) {
     console.error('Það náðist ekki að búa til spurningu', e);
     if (req.headers.accept === 'application/json') {
       return res.status(500).json({ success: false, redirect: '/form-error' });
     }
-    res.render('form-error', {
+    res.render('error', {
       title: 'Villa við að búa til spurninguna þína.',
     });
   }
