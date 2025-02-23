@@ -13,7 +13,6 @@
 import express from 'express';
 import { getDatabase } from './lib/db.client.js';
 import xss from 'xss';
-import { title } from 'process';
 export const router = express.Router(); // top level func
 
 // Heimaslóð
