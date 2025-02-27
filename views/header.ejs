@@ -1,13 +1,22 @@
-<!DOCTYPE html>
-<html lang="is">
+<%- include('header') -%>
 
-<head>
-  <meta charset="utf-8">
-  <title><%= locals.title ?? '' %> — Spurningavefurinn</title>
-  <link rel="stylesheet" href="/styles.css">
-</head>
+<% if (locals.message) { %>
+  <p><%= locals.message %></p>
+<% } %>
 
-<body>
-  <main>
-    
-    
+<% if (!locals.categories) { %>
+  <p>Engir flokkar!</p>
+<% } else { %>
+  <section>
+    <h2>Spurningaflokkar</h2>
+    <ul>
+      <% for (const category of locals.categories) { %>
+        <li><a href="/spurningar/<%= category.slug %>"><%= category.name %></a></li>
+      <% } %>
+    </ul>
+  </section>
+<% } %>
+
+<p><a href="/spurningar/bua-til">Búa til spurningu.</a></p>
+
+<%- include('footer') -%>

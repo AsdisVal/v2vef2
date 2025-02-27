@@ -1,20 +1,16 @@
 <%- include('header') -%>
 
-<% if (questions.length === 0) { %>
-  <p>Engar spurningar í þessum flokki</p>
-<% } %>
-
-<% questions.forEach(question => { %>
-  <div class="question">
-    <h3><%= question.text %></h3>
-    <div class="answers">
-      <% question.answers.forEach(answer => { %>
-        <div class="answer <%= answer.is_correct ? 'correct' : '' %>">
-          <%= answer.text %>
-        </div>
-      <% }) %>
+<% if (!locals.category) { %>
+  <p>Engar spurningar!</p>
+<% } else { %>
+  <section>
+    <div class="questions">
+      <% for (let i = 0; i < locals.category.questions.length; i++) { %>
+        <%- include('question', { question: locals.category.questions[i], index: i+1}) -%>
+      <% } %>
     </div>
-  </div>
-<% }) %>
+    <p class="back"><a href="/">Til baka</a></p>
+  </section>
+<% } %>
 
 <%- include('footer') -%>

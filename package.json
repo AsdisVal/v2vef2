@@ -4,9 +4,13 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "dev": "node --env-file=.env --watch-path ./src src/server.js",
+    "dev": "node --env-file=.env --watch-path=./src ./src/app.js",
+    "start": "node --env-file=.env ./src/app.js",
     "setup": "node --env-file=.env ./src/setup.js",
-    "start": "node src/server.js"
+    "lint": "eslint src",
+    "test": "node --test --experimental-test-module-mocks",
+    "test:watch": "node --test --watch --experimental-test-module-mocks",
+    "test:coverage": "node --test --experimental-test-coverage --experimental-test-module-mocks"
   },
   "keywords": [],
   "author": "",
@@ -19,6 +23,7 @@
     "express-validator": "^7.2.1",
     "morgan": "^1.10.0",
     "pg": "^8.13.3",
+    "express-session": "^1.18.1",
     "xss": "^1.0.15"
   },
   "devDependencies": {
