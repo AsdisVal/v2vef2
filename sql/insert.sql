@@ -1,10 +1,9 @@
-insert into categories (name)
-values ('Html');
-insert into categories (name)
-values ('CSS');
-insert into categories (name)
-values ('JavaScript');
---html
+insert into categories (name, slug)
+values ('Html', 'html');
+insert into categories (name, slug)
+values ('css', 'css');
+insert into categories (name, slug)
+values ('JavaScript', 'javascript');
 INSERT INTO questions (category_id, text)
 VALUES (
         1,
