@@ -1,61 +1,50 @@
+import { body } from 'express-validator';
 import xss from 'xss';
+import { getQuestionDatabase } from './db.js';
 
-// validation function with type fixes
-function validateQuestion(data, categories) {
-  const errors = [];
-  const cleaned = {};
+export function createQuestionValidationMiddleware() {
+  return [
+    body('question')
+      .isString()
+      .withMessage('Spurning verður að vera strengur')
+      .isLength({ min: 10, max: 500 })
+      .withMessage(
+        'Spurning verður að vera að minnsta kosti 10 stafir, að hámarki 500'
+      ),
+    body('category').custom(async (value) => {
+      const categories = (await getQuestionDatabase()?.getCategories()) ?? [];
 
-  // Question validation
-  if (
-    !data.question ||
-    data.question.trim().length < 10 ||
-    data.question.trim().length > 255
-  ) {
-    errors.push('Spurning verður að vera á bilinu 10-255 stafir');
-  } else {
-    cleaned.question = xss(data.question.trim());
-  }
-
-  // Category validation with numeric comparison
-  const categoryId = Number(data.category);
-  const categoryExists = categories.some((c) => c.id === categoryId);
-  if (!categoryExists) {
-    errors.push('Ógildur flokkur valinn');
-  } else {
-    cleaned.category = categoryId;
-  }
-
-  // Answers validation with fixed iteration
-  const answers = [];
-  let correctCount = 0;
-
-  if (Array.isArray(data.answers)) {
-    data.answers.forEach((answer, index) => {
-      const text = answer.text?.trim() || '';
-      const isCorrect = answer.correct == 'on';
-
-      if (text.length > 0) {
-        if (text.length > 255) {
-          errors.push(`Svar ${index + 1} er of langt (hámark 255 stafir)`);
-        }
-        answers.push({
-          text: xss(text),
-          correct: isCorrect,
-        });
-        if (isCorrect) correctCount++;
+      if (!categories.find((c) => c.id.toString() === value)) {
+        throw new Error('Flokkur verður að vera gildur');
       }
-    });
-  }
-  if (answers.length < 2) {
-    errors.push('Það verða að vera að minnsta kosti 2 svör');
-  } else if (answers.length > 5) {
-    errors.push('Mest mega vera 5 svör');
-  }
+      return true;
+    }),
+    body('answers')
+      .isArray({ min: 4, max: 4 })
+      .withMessage('Gefa verður upp fjögur svör'),
+    body('answers.*')
+      .isString()
+      .withMessage('Svar verður að vera strengur')
+      .isLength({ min: 10, max: 500 })
+      .withMessage(
+        'Svar verður að vera að minnsta kosti 10 stafir, að hámarki 500'
+      ),
+    body('correct')
+      .isIn(['0', '1', '2', '3'])
+      .withMessage('Velja verður að vera rétt svar'),
+  ];
+}
 
-  if (correctCount !== 1) {
-    errors.push('Það verður að velja nákvæmlega eitt rétt svar');
-  }
+// Viljum keyra sér og með validation, ver gegn „self XSS“
+export function xssSanitizationMiddleware() {
+  return [body('question').customSanitizer((v) => xss(v))];
+}
 
-  cleaned.answers = answers;
-  return { errors, cleaned };
+export function sanitizationMiddleware() {
+  return [
+    body('question').trim().escape(),
+    body('category').trim().escape(),
+    body('answers').trim().escape(),
+    body('correct').trim().escape(),
+  ];
 }
