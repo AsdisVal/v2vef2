@@ -16,15 +16,14 @@ export class QuestionDatabase {
   }
 
   slugify(text) {
-    // temp copilot generated..
     return text
       .toString()
       .toLowerCase()
-      .replace(/\s+/g, '-') // Replace spaces with -
-      .replace(/[^\w-]+/g, '') // Remove all non-word chars
-      .replace(/--+/g, '-') // Replace multiple - with single -
-      .replace(/^-+/, '') // Trim - from start of text
-      .replace(/-+$/, ''); // Trim - from end of text
+      .replace(/\s+/g, '-')
+      .replace(/[^\w-]+/g, '')
+      .replace(/--+/g, '-')
+      .replace(/^-+/, '')
+      .replace(/-+$/, '');
   }
 
   replaceHtmlEntities(str) {
@@ -49,39 +48,40 @@ export class QuestionDatabase {
    * @returns {Promise<import('../types.js').DatabaseCategory | null>}
    */
   async insertCategory(name) {
-    const safeName = xss(this.replaceHtmlEntities(name));
-
-    const slug = this.slugify(safeName);
-    const result = await this.db.query(
-      'INSERT INTO categories (name, slug) VALUES ($1, $2) ON CONFLICT DO NOTHING RETURNING id, name, slug',
-      [safeName, slug]
-    );
-    if (result && result.rows.length === 1) {
-      /** @type import('../types.js').DatabaseCategory */
-      const resultCategory = {
-        id: result.rows[0].id,
-        name: result.rows[0].name,
-        slug: result.rows[0].slug,
-      };
-      return resultCategory;
+    try {
+      const safeName = xss(this.replaceHtmlEntities(name));
+      const slug = this.slugify(safeName);
+      const result = await this.db.query(
+        'INSERT INTO categories (name, slug) VALUES ($1, $2) ON CONFLICT DO NOTHING RETURNING id, name, slug',
+        [safeName, slug]
+      );
+      if (result && result.rows.length === 1) {
+        return {
+          id: result.rows[0].id,
+          name: result.rows[0].name,
+          slug: result.rows[0].slug,
+        };
+      }
+    } catch (err) {
+      this.logger.error('Error inserting category', { error: err, name });
     }
     return null;
   }
 
   /**
-   * Insert categories into the database.
+   * Insert multiple categories.
    * @param {string[]} categories List of categories to insert.
-   * @returns {Promise<Array<import('../types.js').DatabaseCategory>>} List of categories inserted.
+   * @returns {Promise<Array<import('../types.js').DatabaseCategory>>}
    */
   async insertCategories(categories) {
-    /** @type Array<import('../types.js').DatabaseCategory> */
     const inserted = [];
-    for await (const category of categories) {
+    // Using sequential inserts here; if order doesn't matter, you could use Promise.all.
+    for (const category of categories) {
       const result = await this.insertCategory(category);
       if (result) {
         inserted.push(result);
       } else {
-        this.logger.warn('unable to insert category', { category });
+        this.logger.warn('Unable to insert category', { category });
       }
     }
     return inserted;
@@ -94,19 +94,21 @@ export class QuestionDatabase {
    * @returns
    */
   async insertQuestion(question, categoryId) {
-    const safeQuestionText = xss(this.stringToHtml(question.question));
-    const result = await this.db.query(
-      'INSERT INTO questions (text, category_id) VALUES ($1, $2) RETURNING id, text, category_id',
-      [safeQuestionText, categoryId]
-    );
-    if (result && result.rows.length === 1) {
-      /** @type import('../types.js').DatabaseQuestion */
-      const resultQuestion = {
-        id: result.rows[0].id,
-        text: result.rows[0].text,
-        category_id: result.rows[0].category_id,
-      };
-      return resultQuestion;
+    try {
+      const safeQuestionText = xss(this.stringToHtml(question.question));
+      const result = await this.db.query(
+        'INSERT INTO questions (text, category_id) VALUES ($1, $2) RETURNING id, text, category_id',
+        [safeQuestionText, categoryId]
+      );
+      if (result && result.rows.length === 1) {
+        return {
+          id: result.rows[0].id,
+          text: result.rows[0].text,
+          category_id: result.rows[0].category_id,
+        };
+      }
+    } catch (err) {
+      this.logger.error('Error inserting question', { error: err, question });
     }
     return null;
   }
@@ -118,21 +120,23 @@ export class QuestionDatabase {
    * @returns
    */
   async insertAnswer(answer, questionId) {
-    const safeAnswerText = xss(this.replaceHtmlEntities(answer.answer));
-    const safeCorrect = answer.correct ? 1 : 0;
-    const result = await this.db.query(
-      'INSERT INTO answers (text, question_id, correct) VALUES ($1, $2, $3) RETURNING id, text, question_id',
-      [safeAnswerText, questionId, safeCorrect.toString()]
-    );
-    if (result && result.rows.length === 1) {
-      /** @type import('../types.js').DatabaseAnswer */
-      const resultAnswer = {
-        id: result.rows[0].id,
-        text: result.rows[0].text,
-        question_id: result.rows[0].question_id,
-        correct: Boolean(result.rows[0].correct),
-      };
-      return resultAnswer;
+    try {
+      const safeAnswerText = xss(this.replaceHtmlEntities(answer.answer));
+      const safeCorrect = answer.correct ? 1 : 0;
+      const result = await this.db.query(
+        'INSERT INTO answers (text, question_id, correct) VALUES ($1, $2, $3) RETURNING id, text, question_id, correct',
+        [safeAnswerText, questionId, safeCorrect.toString()]
+      );
+      if (result && result.rows.length === 1) {
+        return {
+          id: result.rows[0].id,
+          text: result.rows[0].text,
+          question_id: result.rows[0].question_id,
+          correct: Boolean(result.rows[0].correct),
+        };
+      }
+    } catch (err) {
+      this.logger.error('Error inserting answer', { error: err, answer });
     }
     return null;
   }
@@ -143,17 +147,17 @@ export class QuestionDatabase {
    * @returns {Promise<Array<import('../types.js').DatabaseAnswer>>}
    */
   async insertAnswers(answers, questionId) {
-    /** @type Array<import('../types.js').DatabaseAnswer> */
-    const inserted = [];
-    for await (const answer of answers) {
-      const result = await this.insertAnswer(answer, questionId);
-      if (result) {
-        inserted.push(result);
-      } else {
-        this.logger.warn('unable to insert answer', { answer });
-      }
-    }
-    return inserted;
+    // Insert concurrently using Promise.all
+    const results = await Promise.all(
+      answers.map(async (answer) => {
+        const res = await this.insertAnswer(answer, questionId);
+        if (!res) {
+          this.logger.warn('Unable to insert answer', { answer });
+        }
+        return res;
+      })
+    );
+    return results.filter((r) => r !== null);
   }
 
   /**
@@ -161,22 +165,24 @@ export class QuestionDatabase {
    * @returns {Promise<Array<import('../types.js').DatabaseCategory>>}
    */
   async getCategories() {
-    const query = 'SELECT id, name, slug FROM categories';
-    const result = await this.db.query(query);
-    if (result) {
-      /** @type Array<import('../types.js').DatabaseCategory> */
-      const categories = result.rows.map((row) => ({
-        id: row.id,
-        name: row.name,
-        slug: row.slug,
-      }));
-      return categories;
+    try {
+      const query = 'SELECT id, name, slug FROM categories';
+      const result = await this.db.query(query);
+      if (result) {
+        return result.rows.map((row) => ({
+          id: row.id,
+          name: row.name,
+          slug: row.slug,
+        }));
+      }
+    } catch (err) {
+      this.logger.error('Error fetching categories', { error: err });
     }
     return [];
   }
 
   /**
-   *
+   * Get a category by its slug
    * @param {string} slug
    * @returns {Promise<import('../types.js').DatabaseCategory | null>}
    */
@@ -184,21 +190,24 @@ export class QuestionDatabase {
     if (!slug || typeof slug !== 'string' || slug.length > MAX_SLUG_LENGTH) {
       return null;
     }
-
-    const query = 'SELECT id, name, slug FROM categories WHERE slug = $1';
-    const result = await this.db.query(query, [slug]);
-    if (result && result.rows.length === 1) {
-      /** @type import('../types.js').DatabaseCategory */
-      const category = {
-        id: result.rows[0].id,
-        name: result.rows[0].name,
-        slug: result.rows[0].slug,
-      };
-      return category;
+    try {
+      const query = 'SELECT id, name, slug FROM categories WHERE slug = $1';
+      const result = await this.db.query(query, [slug]);
+      if (result && result.rows.length === 1) {
+        return {
+          id: result.rows[0].id,
+          name: result.rows[0].name,
+          slug: result.rows[0].slug,
+        };
+      }
+    } catch (err) {
+      this.logger.error('Error fetching category by slug', {
+        error: err,
+        slug,
+      });
     }
     return null;
   }
-
   /**
    * Zip (combine) questions and answers together.
    * @param {import('../types.js').DatabaseQuestion[]} questions
@@ -206,8 +215,6 @@ export class QuestionDatabase {
    * @returns {import('../types.js').QuestionCategory}
    */
   zipQuestionsAndAnswers(questions, answers) {
-    // zip with Map
-    /** @type Map<number,import('../types.js').Question> */
     const questionMap = new Map();
     questions.forEach((question) => {
       questionMap.set(question.id, {
@@ -215,7 +222,6 @@ export class QuestionDatabase {
         answers: [],
       });
     });
-
     answers.forEach((answer) => {
       const question = questionMap.get(answer.question_id);
       if (question) {
@@ -225,17 +231,11 @@ export class QuestionDatabase {
         });
       }
     });
-
     const mappedQuestions = Array.from(questionMap.values());
-
-    /** @type {import('../types.js').QuestionCategory} */
-    const result = {
-      // We can assume the first (and every) question has the same category
-      title: questions[0].category_name ?? '',
+    return {
+      title: questions.length > 0 ? questions[0].category_name ?? '' : '',
       questions: mappedQuestions,
     };
-
-    return result;
   }
 
   /**
@@ -245,85 +245,98 @@ export class QuestionDatabase {
    * @returns {Promise<import('../types.js').QuestionCategory | null>}
    */
   async getQuestionsAndAnswersByCategory(categorySlug) {
-    // Start by getting the category and question
-    const categoryQuery = `
-      SELECT q.id, q.text, c.name AS category_name
-      FROM questions AS q
-      JOIN categories AS c ON q.category_id = c.id
-      WHERE c.slug = $1
-    `;
-    const categoryResult = await this.db.query(categoryQuery, [categorySlug]);
-
-    if (!categoryResult || categoryResult.rows.length === 0) {
+    try {
+      const categoryQuery = `
+        SELECT q.id, q.text, q.category_id, c.name AS category_name
+        FROM questions AS q
+        JOIN categories AS c ON q.category_id = c.id
+        WHERE c.slug = $1
+      `;
+      const categoryResult = await this.db.query(categoryQuery, [categorySlug]);
+      if (!categoryResult || categoryResult.rows.length === 0) {
+        return null;
+      }
+      const questions = categoryResult.rows.map((row) => ({
+        id: row.id,
+        text: row.text,
+        category_id: row.category_id,
+        category_name: row.category_name,
+      }));
+      const answersQuery = `
+        SELECT a.id, a.text, a.correct, a.question_id
+        FROM answers AS a
+        JOIN questions AS q ON a.question_id = q.id
+        JOIN categories AS c ON q.category_id = c.id
+        WHERE c.slug = $1
+      `;
+      const answersResult = await this.db.query(answersQuery, [categorySlug]);
+      if (!answersResult) {
+        return null;
+      }
+      const answers = answersResult.rows.map((row) => ({
+        id: row.id,
+        text: row.text,
+        question_id: row.question_id,
+        correct: row.correct,
+      }));
+      return this.zipQuestionsAndAnswers(questions, answers);
+    } catch (err) {
+      this.logger.error('Error fetching questions and answers by category', {
+        error: err,
+        categorySlug,
+      });
       return null;
     }
-
-    /** @type Array<import('../types.js').DatabaseQuestion> */
-    const questions = categoryResult.rows.map((row) => ({
-      id: row.id,
-      text: row.text,
-      category_id: row.category_id,
-      category_name: row.category_name,
-    }));
-
-    const answersQuery = `
-      SELECT a.text, a.correct, a.question_id
-      FROM answers AS a
-      JOIN questions AS q ON a.question_id = q.id
-      JOIN categories AS c ON q.category_id = c.id
-      WHERE c.slug = $1
-    `;
-    const answersResult = await this.db.query(answersQuery, [categorySlug]);
-
-    if (!answersResult) {
-      return null;
-    }
-
-    /** @type Array<import('../types.js').DatabaseAnswer> */
-    const answers = answersResult.rows.map((row) => ({
-      id: row.id,
-      text: row.text,
-      question_id: row.question_id,
-      correct: row.correct,
-    }));
-
-    return this.zipQuestionsAndAnswers(questions, answers);
   }
-
   /**
-   * Create a question in the database.
-   * @param {string} question
-   * @param {string} categoryId
-   * @param {string[]} answers
-   * @param {number} correctAnswerIndex
+   * Create a question in the database with its answers using a transaction.
+   * @param {string} question The question text.
+   * @param {string} categoryId The category ID.
+   * @param {string[]} answers Array of answer texts.
+   * @param {number} correctAnswerIndex The index of the correct answer.
    * @returns {Promise<boolean>}
    */
   async createQuestion(question, categoryId, answers, correctAnswerIndex) {
     const client = await this.db.connect();
     if (!client) {
+      this.logger.error('Database connection failed in createQuestion');
       return false;
     }
+    try {
+      await client.query('BEGIN');
 
-    const questionResult = await this.insertQuestion(
-      { question, answers: [] },
-      categoryId
-    );
-    if (!questionResult) {
-      return false;
-    }
+      const questionResult = await this.insertQuestion(
+        { question, answers: [] },
+        categoryId
+      );
+      if (!questionResult) {
+        throw new Error('Failed to insert question');
+      }
 
-    await this.insertAnswers(
-      answers.map((answer, i) => ({
+      const mappedAnswers = answers.map((answer, i) => ({
         answer,
         correct: i === correctAnswerIndex,
-      })),
-      questionResult.id.toString()
-    );
+      }));
 
-    return true;
+      const insertedAnswers = await this.insertAnswers(
+        mappedAnswers,
+        questionResult.id.toString()
+      );
+      if (insertedAnswers.length !== answers.length) {
+        throw new Error('Failed to insert all answers');
+      }
+
+      await client.query('COMMIT');
+      return true;
+    } catch (err) {
+      await client.query('ROLLBACK');
+      this.logger.error('Error in createQuestion transaction', { error: err });
+      return false;
+    } finally {
+      client.release();
+    }
   }
 }
-
 /** @type {QuestionDatabase | null} */
 let qdb = null;
 
