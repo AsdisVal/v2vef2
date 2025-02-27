@@ -28,7 +28,7 @@ async function indexRoute(req, res) {
   const categories = await getQuestionDatabase()?.getCategories();
   res.render('index', {
     title: 'Vefforritunarspurningarsíðan',
-    categories,
+    categories: categories,
     message,
   });
 }

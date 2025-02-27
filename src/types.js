@@ -20,7 +20,7 @@
  * @typedef {Object} QuestionCategory
  * @property {string} title Title of the category
  * @property {string} [file] File name
- * @property {Question[]} questions Questions in the category
+ * @property {Question} [questions] Questions in the category
  */
 
 /**
