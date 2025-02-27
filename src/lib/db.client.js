@@ -6,7 +6,7 @@
  *********************************************************************/
 
 import pg from 'pg';
-import xss from 'xss';
+//import xss from 'xss';
 
 /**
  * Database class creates connection.
@@ -95,67 +95,17 @@ export class Database {
       client.release();
     }
   }
+}
 
-  async getAllCategories() {
-    const categoriesList = `
-      SELECT *
-      FROM categories    
-      `;
-    const result = await this.query(categoriesList);
-    if (result) {
-      return result.rows;
-    } else {
-      console.error('Unable to get categories');
-    }
-  }
-
-  /**
-   * get the questions
-   * @param {any} category
-   * @returns questions
-   */
-  async getQuestions(category) {
-    const questionQuery = `
-        SELECT q.id AS id, q.text, c.name AS category 
-        FROM questions AS q 
-        JOIN categories AS c ON q.category_id = c.id 
-        WHERE c.name = $1
-        `;
-    const result = await this.query(questionQuery, [category]);
-    if (result) {
-      for (const question of result.rows) {
-        const answerQuery = `
-          SELECT * FROM answers 
-          WHERE question_id = $1
-        `;
-        const answers = await this.query(answerQuery, [question.id]);
-        answers?.rows.sort(() => Math.random() - 0.5);
-        question.answers = answers?.rows;
-      }
-
-      for (const question of result.rows) {
-        let cleanedText = stringToHtml(question.text);
-        cleanedText = cleanedText.replace(/\\n/g, '\n');
-        cleanedText = cleanedText.replace(/\n\n/g, '</p><p>');
-        cleanedText = cleanedText.replace(/\n/g, '<br>');
-        question.text = cleanedText;
-        for (const answer of question.answers) {
-          answer.text = xss(answer.text);
-        }
-      }
-      return result.rows;
-    }
-  }
-
-  /**
-   * Example question:
-   * Category: HTMl, Question: Is it cool to use HTMl? Answer: Yes, No, Maybe, Absolutely not.
-   * @param {string} question
-   * @param {string} category
-   * @param {any} answers it has a string and boolean
-   * @param {boolean} correctAnswer
-   */
-  async createQuestion(question, category, answers, correctAnswer) {
+/**
+ * Example question:
+ * Category: HTMl, Question: Is it cool to use HTMl? Answer: Yes, No, Maybe, Absolutely not.
+ * @param {string} question
+ * @param {string} category
+ * @param {any} answers it has a string and boolean
+ * @param {boolean} correctAnswer
+ */
+/* async createQuestion(question, category, answers, correctAnswer) {
     const client = await this.connect();
     try {
       await client?.query('BEGIN');
@@ -202,15 +152,15 @@ export class Database {
     }
   }
 }
-
+*/
 /** @type {Database | null} */
-let db = null;
+//let db = null;
 
 /**
  * Return a singleton database instance.
  * @returns {Database | null}
  */
-export function getDatabase() {
+/*export function getDatabase() {
   if (db) {
     return db;
   }
@@ -245,3 +195,54 @@ function stringToHtml(str) {
   // Convert single newlines to <br> tags
   return `<p>${withParagraphs.replace(/\n/g, '<br>')}</p>`;
 }
+
+async getAllCategories() {
+  const categoriesList = `
+    SELECT *
+    FROM categories    
+    `;
+  const result = await this.query(categoriesList);
+  if (result) {
+    return result.rows;
+  } else {
+    console.error('Unable to get categories');
+  }
+}
+*/
+/**
+ * get the questions
+ * @param {any} category
+ * @returns questions
+ */
+/*async getQuestions(category) {
+  const questionQuery = `
+      SELECT q.id AS id, q.text, c.name AS category 
+      FROM questions AS q 
+      JOIN categories AS c ON q.category_id = c.id 
+      WHERE c.name = $1
+      `;
+  const result = await this.query(questionQuery, [category]);
+  if (result) {
+    for (const question of result.rows) {
+      const answerQuery = `
+        SELECT * FROM answers 
+        WHERE question_id = $1
+      `;
+      const answers = await this.query(answerQuery, [question.id]);
+      answers?.rows.sort(() => Math.random() - 0.5);
+      question.answers = answers?.rows;
+    }
+
+    for (const question of result.rows) {
+      let cleanedText = stringToHtml(question.text);
+      cleanedText = cleanedText.replace(/\\n/g, '\n');
+      cleanedText = cleanedText.replace(/\n\n/g, '</p><p>');
+      cleanedText = cleanedText.replace(/\n/g, '<br>');
+      question.text = cleanedText;
+      for (const answer of question.answers) {
+        answer.text = xss(answer.text);
+      }
+    }
+    return result.rows;
+  }
+  */

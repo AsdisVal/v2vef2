@@ -1,17 +1,16 @@
 CREATE TABLE IF NOT EXISTS public.categories (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(64) NOT NULL UNIQUE,
-    created TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+    slug CHARACTER VARYING(128) NOT NULL UNIQUE,
+    name CHARACTER VARYING(64) NOT NULL UNIQUE
 );
 CREATE TABLE IF NOT EXISTS public.questions (
     id SERIAL PRIMARY KEY,
-    text VARCHAR(255) NOT NULL,
-    category_id INTEGER NOT NULL REFERENCES categories(id),
-    created TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+    text CHARACTER VARYING(1024) NOT NULL,
+    category_id integer NOT NULL REFERENCES categories(id)
 );
 CREATE TABLE IF NOT EXISTS public.answers (
-    id SERIAL PRIMARY KEY,
-    question_id INTEGER NOT NULL REFERENCES questions(id) ON DELETE CASCADE,
-    text VARCHAR(255) NOT NULL,
-    is_correct BOOLEAN NOT NULL DEFAULT false
+    id serial primary key,
+    text CHARACTER VARYING(1024) NOT NULL,
+    question_id integer NOT NULL REFERENCES questions(id),
+    correct BOOLEAN DEFAULT false
 );

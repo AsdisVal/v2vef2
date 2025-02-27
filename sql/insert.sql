@@ -1,34 +1,34 @@
 insert into categories (name)
-values ('html');
+values ('Html');
 insert into categories (name)
-values ('css');
+values ('CSS');
 insert into categories (name)
-values ('javascript');
+values ('JavaScript');
 --html
 INSERT INTO questions (category_id, text)
 VALUES (
         1,
         'Ef við værum að smíða vefsíðu og myndum vilja geta farið frá index.html yfir á about.html, hvað væri best að nota?'
     );
-INSERT INTO answers (question_id, text, is_correct)
+INSERT INTO answers (question_id, text, correct)
 VALUES (
         1,
         '<a href=\"about.html\">About</a>',
         true
     );
-INSERT INTO answers (question_id, text, is_correct)
+INSERT INTO answers (question_id, text, correct)
 VALUES (
         1,
         '<form method=\"get\" action=\"about.html\"><button>About</button></form>',
         false
     );
-INSERT INTO answers (question_id, text, is_correct)
+INSERT INTO answers (question_id, text, correct)
 VALUES (
         1,
         '<button to=\"about.html\">About</button>',
         false
     );
-INSERT INTO answers (question_id, text, is_correct)
+INSERT INTO answers (question_id, text, correct)
 VALUES (
         1,
         'Allar jafn góðar / All equally good',
@@ -39,25 +39,25 @@ VALUES (
         1,
         'Í <head> á vefjum setjum við <meta charset=\"utf-8\"> (eða það stafasett sem nota á), afhverju er það gert?'
     );
-INSERT INTO answers (question_id, text, is_correct)
+INSERT INTO answers (question_id, text, correct)
 VALUES (
         2,
         'Þannig að stafir birtist rétt.',
         true
     );
-INSERT INTO answers (question_id, text, is_correct)
+INSERT INTO answers (question_id, text, correct)
 VALUES (
         2,
         'Skilgreining sem visual studio verður að hafa þannig að prettier virki rétt.',
         false
     );
-INSERT INTO answers (question_id, text, is_correct)
+INSERT INTO answers (question_id, text, correct)
 VALUES (
         2,
         'Skilgreining sem aXe krefur okkur um til að vefur verði aðgengilegur.',
         false
     );
-INSERT INTO answers (question_id, text, is_correct)
+INSERT INTO answers (question_id, text, correct)
 VALUES (
         2,
         'Ekkert af þessu.',
@@ -68,25 +68,25 @@ VALUES (
         1,
         'Það sem við getum gert til að forrita aðgengilega vefi er'
     );
-INSERT INTO answers (question_id, text, is_correct)
+INSERT INTO answers (question_id, text, correct)
 VALUES (
         3,
         'Allt af þessu.',
         true
     );
-INSERT INTO answers (question_id, text, is_correct)
+INSERT INTO answers (question_id, text, correct)
 VALUES (
         3,
         'Nota eingöngu lyklaborð við að skoða og nota vefinn.',
         false
     );
-INSERT INTO answers (question_id, text, is_correct)
+INSERT INTO answers (question_id, text, correct)
 VALUES (
         3,
         'Merkja form á aðgengilegan hátt.',
         false
     );
-INSERT INTO answers (question_id, text, is_correct)
+INSERT INTO answers (question_id, text, correct)
 VALUES (
         3,
         'Hafa tóman alt texta á myndum ef þær eru eingöngu til skrauts.',
@@ -97,25 +97,25 @@ VALUES (
         1,
         'Hvað er merkingarfræði í sambandi við námsefnið?'
     );
-INSERT INTO answers (question_id, text, is_correct)
+INSERT INTO answers (question_id, text, correct)
 VALUES (
         4,
         'Hvert HTML element hefur einhverja skilgreinda merkingu—merkingarfræðilegt gildi—sem við þurfum að hafa í huga þegar við smíðum vefi.',
         true
     );
-INSERT INTO answers (question_id, text, is_correct)
+INSERT INTO answers (question_id, text, correct)
 VALUES (
         4,
         'Hvert HTML tag hefur einhverja skilgreinda merkingu—merkingarfræðilegt gildi—sem við þurfum að hafa í huga þegar við smíðum vefi.',
         false
     );
-INSERT INTO answers (question_id, text, is_correct)
+INSERT INTO answers (question_id, text, correct)
 VALUES (
         4,
         'Hvert CSS eigindi hefur einhverja skilgreinda merkingu—merkingarfræðilegt gildi—sem við þurfum að hafa í huga þegar við smíðum vefi.',
         false
     );
-INSERT INTO answers (question_id, text, is_correct)
+INSERT INTO answers (question_id, text, correct)
 VALUES (
         4,
         'Hver CSS selector hefur einhverja skilgreinda merkingu—merkingarfræðilegt gildi—sem við þurfum að hafa í huga þegar við smíðum vefi.',
@@ -138,7 +138,7 @@ VALUES (
         2,
         'Þegar við notum flexbox hvað af eftirfarandi er satt? Gerið ráð fyrir að skjal sé lesið frá vinstri til hægri.'
     );
-INSERT INTO answers (question_id, text, is_correct)
+INSERT INTO answers (question_id, text, correct)
 VALUES (1, 'font-size: 20px;, color: green;', true),
     (1, 'font-size: 15px;, color: red;', false),
     (1, 'font-size: 20px;, color: red;', false),
@@ -212,7 +212,7 @@ VALUES (
         3,
         'Þegar við notum `fetch` í JavaScript ætti ferlið við að sækja gögn að vera'
     );
-INSERT INTO answers (question_id, text, is_correct)
+INSERT INTO answers (question_id, text, correct)
 VALUES (1, '8', true),
     (1, '[8]', false),
     (
