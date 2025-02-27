@@ -1,14 +1,20 @@
-<%- include('header') %>
+<% if (locals.message) { %>
+  <p><%= locals.message %></p>
+<% } %>
 
-<div class="container">
-    <h1>Flokkar</h1>
+<% if (!locals.categories) { %>
+  <p>Engir flokkar!</p>
+<% } else { %>
+  <section>
+    <h2>Spurningaflokkar</h2>
     <ul>
-        <% for(const category of categories.categories) {%>
-            <li class="flokkar">
-                <a href="/spurningar/<%= category.id %>"><%=category.name%></a>
-            </li>
-        <% } %>
+      <% for (const category of locals.categories) { %>
+        <li><a href="/spurningar/<%= category.slug %>"><%= category.name %></a></li>
+      <% } %>
     </ul>
-</div>
+  </section>
+<% } %>
 
-<%- include('footer') %>
+<p><a href="/spurningar/bua-til">Búa til spurningu.</a></p>
+
+<%- include('footer') -%>
